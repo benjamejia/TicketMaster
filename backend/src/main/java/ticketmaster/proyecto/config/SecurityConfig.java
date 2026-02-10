@@ -2,25 +2,37 @@ package ticketmaster.proyecto.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import lombok.RequiredArgsConstructor;
+import ticketmaster.proyecto.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Bean
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AuthenticationProvider authProvider;
+    
+   @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        return http
             .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/**").permitAll() // Fuerza a permitir TODO
-                .anyRequest().permitAll()
+            .authorizeHttpRequests(authRequest ->
+                authRequest
+                    .requestMatchers("/auth/**").permitAll() // Público
+                    .anyRequest().authenticated()            // Protegido
             )
-            .httpBasic(basic -> basic.disable()) // Desactiva el popup de login
-            .formLogin(form -> form.disable()); // Desactiva el formulario
-            
-        return http.build();
+            .sessionManagement(sessionManager -> 
+                sessionManager.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // IMPORTANTE para JWT
+            .authenticationProvider(authProvider)
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
     }
 }
