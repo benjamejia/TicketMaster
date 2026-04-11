@@ -1,4 +1,7 @@
-package ticketmaster.proyecto.model;
+package ticketmaster.proyecto.model.cineModels;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,15 +13,17 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "asientos")
+@Table(name = "funciones")
 @Data
-public class Asientos {
+public class Funciones {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int idAsiento;
-    private String fila;
-    private int numeroAsiento;
+    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    private int idFuncion;
     @ManyToOne
     @JoinColumn(name = "id_sala")
     private Salas idSala;
+
+    private String nombreFuncion;
+    private LocalTime horario;
+    private LocalDate fecha;
 }
