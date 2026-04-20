@@ -7,11 +7,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import ticketmaster.proyecto.enums.Establecimientos;
-import ticketmaster.proyecto.model.Asientos;
-import ticketmaster.proyecto.model.Funciones;
-import ticketmaster.proyecto.model.Salas;
+import ticketmaster.proyecto.model.cineModels.Asientos;
+import ticketmaster.proyecto.model.cineModels.Funciones;
+import ticketmaster.proyecto.model.cineModels.Salas;
 import ticketmaster.proyecto.model.TipoEstablecimiento;
-import ticketmaster.proyecto.model.Establecimiento;
+import ticketmaster.proyecto.model.cineModels.Establecimiento;
 import ticketmaster.proyecto.repository.SucursalesRepository;
 import ticketmaster.proyecto.repository.TipoEstablecimientosRepository;
 import ticketmaster.proyecto.repository.CineRepository.AsientosRepository;

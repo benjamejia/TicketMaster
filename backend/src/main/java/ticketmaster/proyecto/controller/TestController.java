@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import ticketmaster.proyecto.model.Funciones;
+import ticketmaster.proyecto.model.cineModels.Funciones;
 import ticketmaster.proyecto.model.TicketUsuario;
 import ticketmaster.proyecto.repository.TicketUsuarioRepository;
 import ticketmaster.proyecto.repository.CineRepository.FuncionesRepository;
