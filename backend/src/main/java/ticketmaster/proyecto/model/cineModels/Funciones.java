@@ -18,12 +18,14 @@ import lombok.Data;
 public class Funciones {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY )
-    private int idFuncion;
-    @ManyToOne
-    @JoinColumn(name = "id_sala")
-    private Salas idSala;
-
+    private int id;
+    
     private String nombreFuncion;
     private LocalTime horario;
     private LocalDate fecha;
+    private String clasificacion;
+    
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "idSala", nullable = false)
+    private Salas idSala;
 }

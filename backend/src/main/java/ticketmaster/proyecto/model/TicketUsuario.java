@@ -1,12 +1,16 @@
 package ticketmaster.proyecto.model;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
+import ticketmaster.proyecto.model.User.User;
 
 @Entity
 @Table(name = "ticketUsuario")
@@ -15,21 +19,18 @@ public class TicketUsuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY )
     private int idTicket;
-    @ManyToOne
-    private Asientos idAsiento;
-    @ManyToOne
-    private Salas idSala;
-    @ManyToOne
-    private Funciones idFuncion;
-    private int precioTotal;
-    private int horaFuncion;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "idAsiento", nullable = false)
+    private Asientos asiento;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "funcionId", nullable = false)
+    private Funciones funcion;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "idUsuario", nullable = false)
+    private User usuario;
+
+    private LocalDate fechaCompra;
 }
-/*
-{
-  "idAsiento": { "idAsiento": 1 },
-  "idSala": { "idSala": 1 },
-  "idFuncion": { "idFuncion": 1 },
-  "precioTotal": 150,
-  "horaFuncion": 1040
-}
-*/

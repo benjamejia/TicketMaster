@@ -1,43 +1,49 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export function Header() {
+    const { isAuthenticated, user, logout } = useAuth();
+
     return (
-        <header className="sticky top-0 z-50 flex h-20 w-full items-center justify-between bg-blue-950/90 px-10 text-white backdrop-blur-md border-b border-white/10">
-            
-            {/* Logo con un toque de estilo */}
-            <div className="flex items-center gap-2">
-                <div className="size-8 bg-blue-600 rounded-lg rotate-12 flex items-center justify-center shadow-lg shadow-blue-600/50">
-                    <span className="font-black text-white -rotate-12">T</span>
+        <nav className="fixed top-0 w-full z-50 bg-background/80 dark:bg-inverse-surface/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(16,6,45,0.06)]">
+            <div className="flex justify-between items-center px-8 h-20 w-full max-w-screen-2xl mx-auto">
+                <div className="flex items-center gap-12">
+                    <Link to={"/"} className="text-2xl font-black text-[#32294f] dark:text-background tracking-tighter cursor-pointer">
+                        <span> TicketMaster</span>
+                    </Link>
+                    <div className="hidden md:flex gap-8 items-center">
+                        <Link className="font-headline font-semibold tracking-tight text-primary dark:text-primary-container border-b-2 border-primary dark:border-primary-container pb-1 hover:-translate-y-0.5 transition-transform duration-200" to="/">Explorar</Link>
+                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/teatro">Teatro</Link>
+                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/cine">Cine</Link>
+                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/museos">Museo</Link>
+                    </div>
                 </div>
-                <h1 className="text-2xl font-black tracking-tighter uppercase italic">
-                    Ticket<span className="text-blue-500">Master</span>
-                </h1>
-            </div>
+                <div className="flex items-center gap-6">
+                    <button className="p-2 text-primary scale-95 active:duration-75">
+                        <span className="material-symbols-outlined">location_on</span>
+                    </button>
 
-            {/* Navegación Semántica */}
-            <nav>
-                <ul className="flex gap-8 font-medium text-sm uppercase tracking-widest">
-                    <li>
-                        <Link to="/cines" className="transition-colors hover:text-blue-400">Cines</Link>
-                    </li>
-                    <li>
-                        <Link to="/teatros" className="transition-colors hover:text-blue-400">Teatros</Link>
-                    </li>
-                    <li>
-                        <Link to="/museos" className="transition-colors hover:text-blue-400">Museos</Link>
-                    </li>
-                </ul>
-            </nav>
-
-            {/* Acciones */}
-            <div className="flex items-center gap-6">
-                <button className="text-sm font-bold hover:text-blue-400 transition-colors">
-                    Iniciar Sesión
-                </button>
-                <button className="rounded-full bg-blue-600 px-6 py-2 text-sm font-bold transition-all hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-600/30 active:scale-95">
-                    Registrarse
-                </button>
+                    {isAuthenticated ? (
+                        <div className="flex items-center gap-3">
+                            <span className="hidden sm:inline text-sm font-bold text-on-surface-variant font-body">
+                                {user?.username}
+                            </span>
+                            <button
+                                onClick={logout}
+                                className="flex items-center gap-2 bg-error text-on-error px-5 py-2.5 rounded-lg font-bold hover:bg-error-dim transition-all scale-95 active:duration-75"
+                            >
+                                <span className="material-symbols-outlined">logout</span>
+                                <span className="hidden sm:inline">Salir</span>
+                            </button>
+                        </div>
+                    ) : (
+                        <Link to="/login" className="flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-lg font-bold hover:bg-primary-dim transition-all shadow-lg shadow-primary/20 scale-95 active:duration-75">
+                            <span className="material-symbols-outlined">person</span>
+                            <span className="hidden sm:inline">Ingresar</span>
+                        </Link>
+                    )}
+                </div>
             </div>
-        </header>
+        </nav>
     );
 }

@@ -15,10 +15,12 @@ import lombok.Data;
 public class Asientos {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int idAsiento;
+    private int id;
+
     private String fila;
     private int numeroAsiento;
-    @ManyToOne
-    @JoinColumn(name = "id_sala")
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "idSala", nullable = false)
     private Salas idSala;
 }

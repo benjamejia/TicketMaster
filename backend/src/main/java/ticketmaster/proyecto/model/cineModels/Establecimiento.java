@@ -1,19 +1,26 @@
 package ticketmaster.proyecto.model.cineModels;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import ticketmaster.proyecto.enums.Establecimientos;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
+@Table(name = "sucursales")
+@Data
 public class Establecimiento {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idEstablecimiento;
-
-    @Enumerated(EnumType.STRING)
-    private Establecimientos tipo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    private int id;
+    
+    private String nombreSucursal;
+    private String ubicacion;
+    
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "idTipoEstablecimiento", nullable = false)
+    private TipoEstablecimiento tipoEstablecimiento;
 }

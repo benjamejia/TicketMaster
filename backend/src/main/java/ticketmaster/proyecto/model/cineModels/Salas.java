@@ -4,7 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -14,9 +15,13 @@ import lombok.Data;
 public class Salas {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY )
-    private int idSala;
-    @OneToOne
-    private Sucursales idSucursal;
+    private int id;
+
+    private String tipoSala; // 2D, 3D, IMAX, etc.
     private String nombreSala;
-    private int totalAsientos;
+    private int capacidad;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "idEstablecimiento", nullable = false)
+    private Establecimiento idEstablecimiento;
 }
