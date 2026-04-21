@@ -7,11 +7,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import ticketmaster.proyecto.enums.Establecimientos;
-import ticketmaster.proyecto.model.cineModels.Asientos;
-import ticketmaster.proyecto.model.cineModels.Funciones;
-import ticketmaster.proyecto.model.cineModels.Salas;
+import ticketmaster.proyecto.model.Establecimiento;
+import ticketmaster.proyecto.model.Funciones;
+import ticketmaster.proyecto.model.Salas;
 import ticketmaster.proyecto.model.TipoEstablecimiento;
-import ticketmaster.proyecto.model.cineModels.Establecimiento;
 import ticketmaster.proyecto.repository.SucursalesRepository;
 import ticketmaster.proyecto.repository.TipoEstablecimientosRepository;
 import ticketmaster.proyecto.repository.CineRepository.AsientosRepository;
@@ -23,7 +22,6 @@ public class DataLoader implements CommandLineRunner {
     private final FuncionesRepository funcionesRepository;
     private final SalasRepository salasRepository;  
     private final SucursalesRepository sucursalesRepository;
-    private final AsientosRepository asientosRepository;
     private final TipoEstablecimientosRepository tipoEstablecimientosRepository;
 
     public DataLoader(FuncionesRepository funcionesRepository, 
@@ -35,7 +33,6 @@ public class DataLoader implements CommandLineRunner {
         this.funcionesRepository = funcionesRepository;
         this.salasRepository = salasRepository;
         this.sucursalesRepository = sucursalesRepository;
-        this.asientosRepository = asientosRepository;
         this.tipoEstablecimientosRepository = tipoEstablecimientosRepository;
     }
 
@@ -129,20 +126,6 @@ public class DataLoader implements CommandLineRunner {
                 funcion.setIdSala(salaMuseo);
                 funcionesRepository.save(funcion);
             }
-
-            String[] letraFila = {"A","B","C","D","E"};
-            int asientosPorFila = 10;
-            for ( int i = 0; i < letraFila.length; i++){
-                for ( int j = 0; j < asientosPorFila; j++){
-                    Asientos asientos = new Asientos();
-                    asientos.setFila(letraFila[i]);
-                    asientos.setNumeroAsiento(i + 1);
-                    asientos.setIdSala(salaCine1);
-
-                    asientosRepository.save(asientos);
-                }
-            }
-
 
     } 
     

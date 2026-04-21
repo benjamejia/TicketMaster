@@ -1,4 +1,4 @@
-package ticketmaster.proyecto.model.cineModels;
+package ticketmaster.proyecto.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,20 +8,21 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
-import ticketmaster.proyecto.model.TipoEstablecimiento;
 
 @Entity
-@Table(name = "sucursales")
+@Table(name = "salas")
 @Data
-public class Establecimiento {
+public class Salas {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY )
     private int id;
-    
-    private String nombreSucursal;
-    private String ubicacion;
-    
+
+    private String tipoSala;
+    private int precio;
+    private String nombreSala;
+    private int capacidad;
+
     @ManyToOne(optional = false)
-    @JoinColumn(name = "idTipoEstablecimiento", nullable = false)
-    private TipoEstablecimiento tipoEstablecimiento;
+    @JoinColumn(name = "idEstablecimiento", nullable = false)
+    private Establecimiento idEstablecimiento;
 }

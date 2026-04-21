@@ -9,8 +9,8 @@ interface AuthUser {
 interface RegisterData {
     username: string;
     password: string;
-    firstName: string;
-    lastName: string;
+    primerNombre: string;
+    segundoNombre: string;
     email: string;
     country: string;
     phoneNumber: number;

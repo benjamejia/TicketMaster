@@ -10,7 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
-import ticketmaster.proyecto.model.User.User;
+import ticketmaster.proyecto.model.cineModels.Asientos;
+import ticketmaster.proyecto.model.userModels.User;
 
 @Entity
 @Table(name = "ticketUsuario")

@@ -1,4 +1,4 @@
-import { EventCard } from "../components/cards/EventCard";
+import { EventCard } from "../../components/cards/EventCard";
 
 export function CinePage() {
     const eventos = [

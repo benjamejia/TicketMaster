@@ -119,7 +119,7 @@ export function LoginPage() {
                         {/* Input Username */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="username">
-                                Usuario
+                                Usuario o Email
                             </label>
                             <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
                                 <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">person</span>
@@ -131,7 +131,7 @@ export function LoginPage() {
                                         setUsername(e.target.value);
                                         if (error) setError(null); // Limpiar error al escribir
                                     }}
-                                    placeholder="tu_usuario"
+                                    placeholder="ejemplo@correo.com o usuario123"
                                     required
                                     className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
                                 />
@@ -141,7 +141,7 @@ export function LoginPage() {
                         {/* Input Contraseña */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="password">
-                                Contraseña
+                                Contraseña o CURP
                             </label>
                             <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
                                 <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">lock</span>

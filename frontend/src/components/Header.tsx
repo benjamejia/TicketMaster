@@ -13,9 +13,9 @@ export function Header() {
                     </Link>
                     <div className="hidden md:flex gap-8 items-center">
                         <Link className="font-headline font-semibold tracking-tight text-primary dark:text-primary-container border-b-2 border-primary dark:border-primary-container pb-1 hover:-translate-y-0.5 transition-transform duration-200" to="/">Explorar</Link>
-                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/teatro">Teatro</Link>
-                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/cine">Cine</Link>
-                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/museos">Museo</Link>
+                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/theaterCategory">Teatro</Link>
+                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/cineCategory">Cine</Link>
+                        <Link className="font-headline font-semibold tracking-tight text-on-surface-variant dark:text-outline-variant hover:text-[#32294f] dark:hover:text-background hover:-translate-y-0.5 transition-transform duration-200" to="/museumCategory">Museo</Link>
                     </div>
                 </div>
                 <div className="flex items-center gap-6">

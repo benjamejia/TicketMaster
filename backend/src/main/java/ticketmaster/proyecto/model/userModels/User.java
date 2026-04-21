@@ -1,8 +1,10 @@
-package ticketmaster.proyecto.model.User;
+// backend/src/main/java/ticketmaster/proyecto/model/User/User.java
+package ticketmaster.proyecto.model.userModels;
 
 import java.util.Collection;
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,14 +34,21 @@ public class User implements UserDetails {
     Integer id;
     @Column(name = "username", nullable = false)
     String username;
-    String firstName;
-    String lastName;
+    String primerNombre;
+    String segundoNombre;
+    String primerApellido;
+    String segundoApellido;
+    String dateOfBirth;
+    String gender;
     String email;
-    String country;
     String password;
+    String birthState;
+    String country;
     int phoneNumber;
     @Enumerated(EnumType.STRING )
     Role role;
+    @Column(unique = true)
+    String curp;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -61,4 +70,8 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() { return true; }
 
+    @Override
+    public @Nullable String getPassword() {
+        return this.password;
+    }
 }

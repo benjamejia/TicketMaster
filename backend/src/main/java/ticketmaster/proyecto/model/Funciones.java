@@ -1,4 +1,4 @@
-package ticketmaster.proyecto.model.cineModels;
+package ticketmaster.proyecto.model;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

@@ -2,10 +2,31 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import avatarBanner from '../assets/avatarBanner.jpg';
+import { FEDERAL_ENTITIES, type StateCode } from "../types/types";
+
+interface RegisterRequestData {
+    username: string;
+    password: string;
+    primerNombre: string;
+    segundoNombre: string;
+    primerApellido: string;
+    segundoApellido: string;
+    dateOfBirth: string;
+    stateOfBirth: string;
+    gender: string;
+    email: string;
+    country: string;
+    phoneNumber: number;
+}
 
 export function RegisterPage() {
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
+    const [primerNombre, setPrimerNombre] = useState("");
+    const [segundoNombre, setSegundoNombre] = useState("");
+    const [primerApellido, setPrimerApellido] = useState("");
+    const [segundoApellido, setSegundoApellido] = useState("");
+    const [dateOfBirth, setDateOfBirth] = useState("");
+    const [stateOfBirth, setStateOfBirth] = useState("");
+    const [gender, setGender] = useState("");
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -38,18 +59,30 @@ export function RegisterPage() {
             return;
         }
 
+        if (!primerNombre.trim() || !segundoNombre.trim() || !username.trim() || !email.trim() || !password.trim() || !country.trim() || !gender || !dateOfBirth) {
+            setError("Todos los campos son obligatorios.");
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            await register({
+            const registerData: RegisterRequestData = {
                 username,
                 password,
-                firstName,
-                lastName,
+                primerNombre,
+                segundoNombre,
+                primerApellido,
+                segundoApellido,
+                dateOfBirth,
+                stateOfBirth,
+                gender,
                 email,
                 country,
                 phoneNumber: phone,
-            });
+            };
+
+            await register(registerData);
             navigate("/");
         } catch {
             setError("Error al crear la cuenta. El nombre de usuario podría ya estar en uso.");
@@ -110,18 +143,18 @@ export function RegisterPage() {
 
                     <form className="space-y-5" onSubmit={handleSubmit}>
 
-                        {/* Input Nombre y Apellido */}
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* Input Nombre, Apellido y Nombre del Medio */}
+                        <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="firstName">
-                                    Nombre
+                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="primerNombre">
+                                    Primer Nombre
                                 </label>
                                 <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
                                     <input
                                         type="text"
-                                        id="firstName"
-                                        value={firstName}
-                                        onChange={(e) => setFirstName(e.target.value)}
+                                        id="primerNombre"
+                                        value={primerNombre}
+                                        onChange={(e) => setPrimerNombre(e.target.value)}
                                         placeholder="María"
                                         required
                                         className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
@@ -129,43 +162,119 @@ export function RegisterPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="lastName">
-                                    Apellido
+                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="primerApellido">
+                                    Segundo Nombre
                                 </label>
                                 <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
                                     <input
                                         type="text"
-                                        id="lastName"
-                                        value={lastName}
-                                        onChange={(e) => setLastName(e.target.value)}
-                                        placeholder="Pérez"
+                                        id="segundoNombre"
+                                        value={segundoNombre}
+                                        onChange={(e) => setSegundoNombre(e.target.value)}
+                                        placeholder="Rosa"
+                                        className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">    
+                            {/* Contenedor del Primer Apellido */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="primerApellido">
+                                    Primer Apellido
+                                </label>
+                                <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
+                                    <input
+                                        type="text"
+                                        id="primerApellido"
+                                        value={primerApellido}
+                                        onChange={(e) => setPrimerApellido(e.target.value)}
+                                        placeholder="García"
+                                        required
+                                        className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Contenedor del Segundo Apellido - Ahora es un hermano directo del anterior */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="segundoApellido">
+                                    Segundo Apellido
+                                </label>
+                                <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
+                                    <input
+                                        type="text"
+                                        id="segundoApellido"
+                                        value={segundoApellido}
+                                        onChange={(e) => setSegundoApellido(e.target.value)}
+                                        placeholder="García"
                                         required
                                         className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
                                     />
                                 </div>
                             </div>
                         </div>
+                        {/*AQUI*/}
+                        {/* Input Fecha de Nacimiento y Género */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="dateOfBirth">
+                                    Fecha de Nacimiento
+                                </label>
+                                <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
+                                    <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">calendar_today</span>
+                                    <input
+                                        type="date"
+                                        id="dateOfBirth"
+                                        value={dateOfBirth}
+                                        onChange={(e) => setDateOfBirth(e.target.value)}
+                                        required
+                                        className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="gender">
+                                    Género
+                                </label>
+                                <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
+                                    <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">wc</span>
+                                    <select
+                                        id="gender"
+                                        value={gender}
+                                        onChange={(e) => setGender(e.target.value)}
+                                        required
+                                        className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium outline-none font-body appearance-none cursor-pointer"
+                                    >
+                                        <option value="">Selecciona tu género</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-                        {/* Input Nombre de Usuario */}
+                        {/* Input Usuario */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="username">
-                                Nombre de Usuario
+                                Usuario
                             </label>
                             <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
-                                <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">badge</span>
+                                <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">person</span>
                                 <input
                                     type="text"
                                     id="username"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="maria_perez"
+                                    placeholder="TuUsuario"
                                     required
                                     className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
                                 />
                             </div>
                         </div>
 
-                        {/* Input Correo */}
+                        {/* Input Email */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="email">
                                 Correo Electrónico
@@ -177,7 +286,7 @@ export function RegisterPage() {
                                     id="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="tu@correo.com"
+                                    placeholder="tu@email.com"
                                     required
                                     className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
                                 />
@@ -198,6 +307,7 @@ export function RegisterPage() {
                                         value={country}
                                         onChange={(e) => setCountry(e.target.value)}
                                         placeholder="México"
+                                        required
                                         className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
                                     />
                                 </div>
@@ -220,7 +330,43 @@ export function RegisterPage() {
                                 </div>
                             </div>
                         </div>
-
+                        <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                            <label 
+                            className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" 
+                            htmlFor="stateOfBirth"
+                            >
+                            Estado de nacimiento
+                            </label>
+                            
+                            <div className="relative">
+                            <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
+                                <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors shrink-0">
+                                public
+                                </span>
+                                
+                                <select
+                                id="stateOfBirth"
+                                value={stateOfBirth}
+                                onChange={(e) => setStateOfBirth(e.target.value as StateCode)}
+                                required
+                                className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium appearance-none cursor-pointer outline-none font-body pr-6"
+                                >
+                                <option value="" disabled>Selecciona un estado</option>
+                                {FEDERAL_ENTITIES.map((entity) => (
+                                    <option key={entity.code} value={entity.code}>
+                                    {entity.name}
+                                    </option>
+                                ))}
+                                </select>
+                                
+                                <span className="material-symbols-outlined text-outline-variant pointer-events-none absolute right-4">
+                                expand_more
+                                </span>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
                         {/* Input Contraseña */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="password">
