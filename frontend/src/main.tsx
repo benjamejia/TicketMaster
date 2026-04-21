@@ -13,6 +13,7 @@ import { CinePage } from './pages/establecimientos/CinePage.tsx'
 import { TeatroPage } from './pages/establecimientos/TeatroPage.tsx'
 import { MuseumPage } from './pages/establecimientos/MuseumPage.tsx'
 import { EventoDetallePage } from './pages/EventoDetallePage.tsx'
+import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <AuthProvider>
@@ -23,12 +24,19 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/registro" element={<RegisterPage />} />
 
         <Route element={<PublicLayout />} >
-          <Route index element={<MainPage/>} />
-          <Route path="/cineCategory" element={<CinePage />} />
-          <Route path="/theaterCategory" element={<TeatroPage />} />
-          <Route path="/museumCategory" element={<MuseumPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/ticket" element={<TicketConfirmationPage />} />
+        <Route index element={<MainPage/>} />
+        <Route path="/cineCategory" element={<CinePage />} />
+        <Route path="/theaterCategory" element={<TeatroPage />} />
+        <Route path="/museumCategory" element={<MuseumPage />} />
+        <Route
+          path="/checkout"
+          element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>}
+        />
+        
+        <Route
+          path="/confirmation/:ticketId"
+          element={<ProtectedRoute><TicketConfirmationPage /></ProtectedRoute>}
+        />
           <Route path="/evento/:id" element={<EventoDetallePage />} />
         </Route>
 

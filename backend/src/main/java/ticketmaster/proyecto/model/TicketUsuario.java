@@ -1,7 +1,11 @@
 package ticketmaster.proyecto.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -10,7 +14,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
-import ticketmaster.proyecto.model.cineModels.Asientos;
 import ticketmaster.proyecto.model.userModels.User;
 
 @Entity
@@ -21,9 +24,8 @@ public class TicketUsuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY )
     private int idTicket;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "idAsiento", nullable = false)
-    private Asientos asiento;
+    @ElementCollection
+    private List<String> asientos;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "funcionId", nullable = false)
@@ -33,5 +35,6 @@ public class TicketUsuario {
     @JoinColumn(name = "idUsuario", nullable = false)
     private User usuario;
 
-    private LocalDate fechaCompra;
+    @Column(nullable = false)
+    private LocalDateTime fecha;
 }
