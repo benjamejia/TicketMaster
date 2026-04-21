@@ -74,4 +74,9 @@ public class User implements UserDetails {
     public @Nullable String getPassword() {
         return this.password;
     }
+
+    public Object getTelefono() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getTelefono'");
+    }
 }
