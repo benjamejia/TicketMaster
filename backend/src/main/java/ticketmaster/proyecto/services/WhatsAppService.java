@@ -75,17 +75,17 @@ public class WhatsAppService {
     private boolean sendViaTwilio(String phoneNumber, String message) {
         try {
             String url = "https://api.twilio.com/2010-04-01/Accounts/" + accountSid + "/Messages.json";
-            
-            String auth = accountSid + ":" + authToken;
-            String base64Auth = java.util.Base64.getEncoder()
-                    .encodeToString(auth.getBytes());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBasicAuth(accountSid, authToken);
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            String body = "From=whatsapp:" + twilioWhatsAppNumber + 
-                         "&To=whatsapp:+" + phoneNumber + 
+            // Limpiar el número: remover '+' al inicio si existe para evitar doble '+'
+            String cleanPhoneNumber = phoneNumber.startsWith("+") ? phoneNumber.substring(1) : phoneNumber;
+            String cleanFromNumber = twilioWhatsAppNumber.startsWith("+") ? twilioWhatsAppNumber.substring(1) : twilioWhatsAppNumber;
+
+            String body = "From=whatsapp:%2B" + cleanFromNumber +
+                         "&To=whatsapp:%2B" + cleanPhoneNumber +
                          "&Body=" + java.net.URLEncoder.encode(message, "UTF-8");
 
             HttpEntity<String> entity = new HttpEntity<>(body, headers);
@@ -108,7 +108,8 @@ public class WhatsAppService {
      */
     private boolean sendViaMetaCloudAPI(String phoneNumber, String message) {
         try {
-            String url = "https://graph.instagram.com/v18.0/" + metaPhoneNumberId + "/messages";
+            // FIX: La URL correcta para WhatsApp Cloud API es graph.facebook.com, no graph.instagram.com
+            String url = "https://graph.facebook.com/v18.0/" + metaPhoneNumberId + "/messages";
             
             WhatsAppMetaRequest request = new WhatsAppMetaRequest();
             request.setMessaging_product("whatsapp");
@@ -211,6 +212,19 @@ public class WhatsAppService {
             public Text(String body) {
                 this.body = body;
             }
+        }
+    }
+
+    public boolean sendWhatsAppMessage(String phoneNumber, String message) {
+        try {
+            if ("meta".equalsIgnoreCase(apiProvider)) {
+                return sendViaMetaCloudAPI(phoneNumber, message);
+            } else {
+                return sendViaTwilio(phoneNumber, message);
+            }
+        } catch (Exception e) {
+            log.error("Error enviando mensaje de WhatsApp", e);
+            return false;
         }
     }
 }

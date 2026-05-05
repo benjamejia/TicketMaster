@@ -17,7 +17,7 @@ public class RegisterRequest {
     String primerApellido;
     String segundoApellido;
     String dateOfBirth;
-    String birthState;
+    String stateOfBirth;
     String gender;
     String email;
     String country;

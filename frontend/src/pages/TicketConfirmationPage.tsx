@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { getTicketDetails, resendWhatsAppConfirmation } from '../services/api-service';
+import { getTicketDetails, type TransactionDetail } from '../services/api-service';
 
 interface PurchaseData {
   confirmationNumber: string;
@@ -10,22 +10,13 @@ interface PurchaseData {
   whatsAppSent: boolean;
 }
 
-interface TicketData {
-  id: number;
-  tipoEvento: string;
-  ubicacion: string;
-  fecha: string;
-  cantidadBoletos: number;
-  asientos?: string[];
-}
-
 export function TicketConfirmationPage() {
   const { ticketId } = useParams<{ ticketId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [purchaseData, setPurchaseData] = useState<PurchaseData | null>(null);
-  const [ticketData, setTicketData] = useState<TicketData | null>(null);
+  const [ticketDetails, setTicketDetails] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [resending, setResending] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -34,20 +25,17 @@ export function TicketConfirmationPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Intentar obtener datos del location state (si viene del checkout)
         if (location.state) {
           setPurchaseData(location.state);
         }
 
-        // Cargar detalles del ticket desde el backend
         if (ticketId) {
           const details = await getTicketDetails(parseInt(ticketId));
           if (details) {
-            setTicketData(details);
+            setTicketDetails(details);
           }
         }
-      } catch (error) {
-        console.error('Error cargando confirmación:', error);
+      } catch {
         setMessage({
           type: 'error',
           text: 'Error al cargar los detalles de tu compra',
@@ -75,6 +63,7 @@ export function TicketConfirmationPage() {
 
     try {
       if (ticketId) {
+        const { resendWhatsAppConfirmation } = await import('../services/api-service');
         await resendWhatsAppConfirmation(parseInt(ticketId), phoneNumber);
         setMessage({
           type: 'success',
@@ -82,7 +71,7 @@ export function TicketConfirmationPage() {
         });
         setPhoneNumber('');
       }
-    } catch (error) {
+    } catch {
       setMessage({
         type: 'error',
         text: 'Error al reenviar la confirmación',
@@ -93,10 +82,11 @@ export function TicketConfirmationPage() {
   };
 
   const downloadQR = () => {
-    if (purchaseData?.qrCode) {
+    const qrCode = ticketDetails?.qrCode || purchaseData?.qrCode;
+    if (qrCode) {
       const link = document.createElement('a');
-      link.href = `data:image/png;base64,${purchaseData.qrCode}`;
-      link.download = `qr-${purchaseData.confirmationNumber}.png`;
+      link.href = `data:image/png;base64,${qrCode}`;
+      link.download = `qr-${ticketDetails?.confirmationNumber || purchaseData?.confirmationNumber}.png`;
       link.click();
     }
   };
@@ -113,10 +103,11 @@ export function TicketConfirmationPage() {
     );
   }
 
+  const confirmationNumber = ticketDetails?.confirmationNumber || purchaseData?.confirmationNumber;
+
   return (
     <div className="min-h-screen bg-linear-to-b from-success/5 to-background py-8">
       <div className="max-w-2xl mx-auto px-4">
-        {/* Encabezado de Éxito */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-success/20 rounded-full mb-4">
             <span className="text-4xl">✓</span>
@@ -129,12 +120,11 @@ export function TicketConfirmationPage() {
           </p>
         </div>
 
-        {/* Número de Confirmación Destacado */}
-        {purchaseData && (
+        {confirmationNumber && (
           <div className="bg-surface border-2 border-success rounded-lg p-6 mb-8 text-center">
             <p className="text-on-background/70 text-sm mb-2">Número de Confirmación</p>
             <p className="text-3xl font-bold text-success font-mono">
-              {purchaseData.confirmationNumber}
+              {confirmationNumber}
             </p>
             <p className="text-on-background/50 text-xs mt-2">
               Guarda este número, lo necesitarás en la entrada
@@ -142,31 +132,29 @@ export function TicketConfirmationPage() {
           </div>
         )}
 
-        {/* Detalles de la Reserva */}
-        {ticketData && (
+        {ticketDetails?.ticket && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* Detalles del Evento */}
             <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
               <h2 className="text-lg font-bold text-on-background mb-4">
-                📅 Evento
+                Evento
               </h2>
               <div className="space-y-3">
                 <div>
                   <p className="text-on-background/70 text-sm">Tipo de Evento</p>
                   <p className="text-on-background font-semibold">
-                    {ticketData.tipoEvento}
+                    {ticketDetails.ticket.tipoEvento}
                   </p>
                 </div>
                 <div>
                   <p className="text-on-background/70 text-sm">Ubicación</p>
                   <p className="text-on-background font-semibold">
-                    {ticketData.ubicacion}
+                    {ticketDetails.ticket.ubicacion}
                   </p>
                 </div>
                 <div>
                   <p className="text-on-background/70 text-sm">Fecha</p>
                   <p className="text-on-background font-semibold">
-                    {new Date(ticketData.fecha).toLocaleDateString('es-MX', {
+                    {new Date(ticketDetails.ticket.fecha).toLocaleDateString('es-MX', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -179,23 +167,22 @@ export function TicketConfirmationPage() {
               </div>
             </div>
 
-            {/* Detalles de la Compra */}
             <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
               <h2 className="text-lg font-bold text-on-background mb-4">
-                🎫 Boletos
+                Boletos
               </h2>
               <div className="space-y-3">
                 <div>
                   <p className="text-on-background/70 text-sm">Cantidad</p>
                   <p className="text-on-background font-semibold">
-                    {ticketData.cantidadBoletos} Boleto{ticketData.cantidadBoletos !== 1 ? 's' : ''}
+                    {ticketDetails.ticket.cantidadBoletos} Boleto{ticketDetails.ticket.cantidadBoletos !== 1 ? 's' : ''}
                   </p>
                 </div>
-                {ticketData.asientos && ticketData.asientos.length > 0 && (
+                {ticketDetails.ticket.asientos && ticketDetails.ticket.asientos.length > 0 && (
                   <div>
                     <p className="text-on-background/70 text-sm">Asientos</p>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {ticketData.asientos.map((asiento, idx) => (
+                      {ticketDetails.ticket.asientos.map((asiento, idx) => (
                         <span
                           key={idx}
                           className="bg-primary/20 text-primary px-3 py-1 rounded text-sm font-semibold"
@@ -211,17 +198,16 @@ export function TicketConfirmationPage() {
           </div>
         )}
 
-        {/* Código QR */}
-        {purchaseData?.qrCode && (
+        {ticketDetails?.qrCode && (
           <div className="bg-surface p-6 rounded-lg border border-outline-variant/20 mb-8 text-center">
             <h2 className="text-lg font-bold text-on-background mb-4">
-              🔐 Código QR
+              Código QR
             </h2>
             <p className="text-on-background/70 text-sm mb-4">
               Presenta este código en la entrada del evento
             </p>
             <img
-              src={`data:image/png;base64,${purchaseData.qrCode}`}
+              src={`data:image/png;base64,${ticketDetails.qrCode}`}
               alt="QR Code"
               className="w-48 h-48 mx-auto mb-4"
             />
@@ -229,16 +215,15 @@ export function TicketConfirmationPage() {
               onClick={downloadQR}
               className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition"
             >
-              📥 Descargar QR
+              Descargar QR
             </button>
           </div>
         )}
 
-        {/* Estado de WhatsApp */}
         {purchaseData && (
           <div className="bg-surface p-6 rounded-lg border border-outline-variant/20 mb-8">
             <h2 className="text-lg font-bold text-on-background mb-4">
-              💬 WhatsApp
+              WhatsApp
             </h2>
             {purchaseData.whatsAppSent ? (
               <div className="flex items-center gap-3 text-success mb-4">
@@ -251,7 +236,6 @@ export function TicketConfirmationPage() {
               </p>
             )}
 
-            {/* Formulario para Reenvío */}
             <form onSubmit={handleResendWhatsApp} className="flex gap-2">
               <input
                 type="tel"
@@ -276,7 +260,6 @@ export function TicketConfirmationPage() {
           </div>
         )}
 
-        {/* Mensajes de Estado */}
         {message && (
           <div
             className={`p-4 rounded-lg mb-8 ${
@@ -289,10 +272,9 @@ export function TicketConfirmationPage() {
           </div>
         )}
 
-        {/* Instrucciones Importantes */}
         <div className="bg-warning/10 border border-warning rounded-lg p-6 mb-8">
           <h2 className="text-lg font-bold text-on-background mb-4">
-            ⚠️ Instrucciones Importantes
+            Instrucciones Importantes
           </h2>
           <ul className="space-y-2 text-on-background">
             <li>✓ Guarda tu número de confirmación</li>
@@ -303,23 +285,21 @@ export function TicketConfirmationPage() {
           </ul>
         </div>
 
-        {/* Botones de Acción */}
         <div className="flex gap-4 justify-center mb-8">
           <button
             onClick={printConfirmation}
             className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition font-semibold"
           >
-            🖨️ Imprimir Confirmación
+            Imprimir Confirmación
           </button>
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 bg-outline px-6 py-3 rounded-lg hover:bg-outline/90 transition font-semibold text-on-background"
           >
-            🏠 Volver al Inicio
+            Volver al Inicio
           </button>
         </div>
 
-        {/* Soporte */}
         <div className="text-center text-on-background/70">
           <p>¿Tienes dudas?</p>
           <p>

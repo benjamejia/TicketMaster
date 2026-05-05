@@ -47,8 +47,5 @@ public class Transacciones {
     @Column(nullable = false)
     private LocalDateTime fecha;
 
-    public void setTotal(Double monto2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setTotal'");
-    }
+    // setTotal no es necesario, usar setMonto() en su lugar
 }

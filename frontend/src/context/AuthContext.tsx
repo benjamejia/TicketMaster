@@ -11,6 +11,11 @@ interface RegisterData {
     password: string;
     primerNombre: string;
     segundoNombre: string;
+    primerApellido: string;
+    segundoApellido: string;
+    dateOfBirth: string;
+    stateOfBirth: string;
+    gender: string;
     email: string;
     country: string;
     phoneNumber: number;
@@ -61,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (username: string, password: string) => {
         const { data } = await api.post<{ token: string }>("/auth/login", {
-            username,
+            usernameOrCurp: username,
             password,
         });
         setToken(data.token);
