@@ -10,8 +10,8 @@ function mapFuncionToEvento(funcion: Funcion, categoria: string) {
         id: String(funcion.id),
         titulo: funcion.nombreFuncion,
         srcImg: PLACEHOLDER_IMAGES[categoria] || PLACEHOLDER_IMAGES["Museo"],
-        precio: `$${(funcion.idSala?.precio || 0).toFixed(2)}`,
-        lugar: funcion.idSala?.idEstablecimiento?.nombreSucursal || "Por definir",
+        precio: `$${(funcion.precio || 0).toFixed(2)}`,
+        lugar: funcion.nombreEstablecimiento || "Por definir",
         categoria,
     };
 }
@@ -26,7 +26,8 @@ export function MuseumPage() {
             try {
                 const funciones = await getAllFunciones();
                 const museoFunciones = funciones.filter(
-                    (f) => f.idSala?.idEstablecimiento?.nombreSucursal?.toLowerCase().includes("museo") ||
+                    (f) => f.nombreEstablecimiento?.toLowerCase().includes("museo") ||
+                           f.tipoEstablecimiento?.toLowerCase().includes("museo") ||
                            f.nombreFuncion?.toLowerCase().includes("museo")
                 );
                 const mapped = museoFunciones.map((f) => mapFuncionToEvento(f, "Museo"));

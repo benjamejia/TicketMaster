@@ -106,13 +106,16 @@ export function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Error Message Mejorado */}
-                    {error && (
-                        <div className="bg-error-container text-on-error-container px-4 py-3 rounded-2xl text-sm font-body font-medium flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <span className="material-symbols-outlined text-error">error</span>
-                            {error}
-                        </div>
-                    )}
+                    {/* Error Message Visualmente Destacado */}
+                     {error && (
+                         <div className="bg-error/10 border-2 border-error/30 text-on-error-container px-6 py-4 rounded-2xl text-base font-body font-semibold flex items-center gap-4 shadow-lg animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-500">
+                             <span className="material-symbols-outlined text-error text-3xl animate-shake">error</span>
+                             <div className="flex flex-col gap-1">
+                                 <span className="font-bold text-error text-sm uppercase tracking-wide">Error</span>
+                                 <span>{error}</span>
+                             </div>
+                         </div>
+                     )}
 
                     <form className="space-y-6" onSubmit={handleSubmit}>
 

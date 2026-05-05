@@ -25,10 +25,8 @@ export interface Sucursal {
   id: number;
   nombreSucursal: string;
   ubicacion: string;
-  tipoEstablecimiento: {
-    id: number;
-    tipo: string;
-  };
+  tipoEstablecimientoId: number;
+  tipoEstablecimiento: string;
 }
 
 export const getAllSucursales = async (): Promise<Sucursal[]> => {
@@ -60,22 +58,12 @@ export interface Funcion {
   horario: string;
   fecha: string;
   clasificacion: string;
-  idSala: {
-    id: number;
-    tipoSala: string;
-    precio: number;
-    nombreSala: string;
-    capacidad: number;
-    idEstablecimiento: {
-      id: number;
-      nombreSucursal: string;
-      ubicacion: string;
-      tipoEstablecimiento?: {
-        id: number;
-        tipo: string;
-      };
-    };
-  };
+  idSala: number;
+  nombreSala: string;
+  idEstablecimiento: number;
+  nombreEstablecimiento: string;
+  precio: number;
+  tipoEstablecimiento: string;
 }
 
 export const getAllFunciones = async (): Promise<Funcion[]> => {
@@ -107,11 +95,8 @@ export interface Sala {
   precio: number;
   nombreSala: string;
   capacidad: number;
-  idEstablecimiento: {
-    id: number;
-    nombreSucursal: string;
-    ubicacion: string;
-  };
+  idEstablecimiento: number;
+  nombreEstablecimiento: string;
 }
 
 export const getAllSalas = async (): Promise<Sala[]> => {
@@ -180,17 +165,12 @@ export const getAllTiposEstablecimiento = async (): Promise<TipoEstablecimiento[
 // =====================================================
 
 export interface CheckoutRequest {
-  funcion?: {
-    id: number;
-  };
-  ubicacion: string;
-  fecha: string;
+  funcionId: number;
   cantidadBoletos: number;
   asientos?: string[];
   monto: number;
   metodoPago: string;
   phoneNumber: string;
-  eventId?: string;
 }
 
 export interface PurchaseResponse {
@@ -243,7 +223,16 @@ export const getTicketDetails = async (ticketId: number): Promise<TransactionDet
   }
 };
 
-export const getMyTickets = async (): Promise<any[]> => {
+export interface MyTicket {
+  idTicket: number;
+  asientos: string[];
+  fecha: string;
+  nombreFuncion: string;
+  ubicacion: string;
+  clasificacion: string;
+}
+
+export const getMyTickets = async (): Promise<MyTicket[]> => {
   try {
     const response = await api.get('/checkout/my-tickets');
     return response.data;

@@ -19,8 +19,8 @@ function mapFuncionToEvento(funcion: Funcion, categoria: string) {
         id: String(funcion.id),
         titulo: funcion.nombreFuncion,
         srcImg: PLACEHOLDER_IMAGES[categoria] || "https://images.unsplash.com/photo-1501612780353-7e5432707802?w=500&auto=format&fit=crop&q=60",
-        precio: `$${(funcion.idSala?.precio || 0).toFixed(2)}`,
-        lugar: funcion.idSala?.idEstablecimiento?.nombreSucursal || "Por definir",
+        precio: `$${(funcion.precio || 0).toFixed(2)}`,
+        lugar: funcion.nombreEstablecimiento || "Por definir",
         categoria,
     };
 }
@@ -35,11 +35,12 @@ export function CategoryPage({ title, description, categoryName }: CategoryPageP
             try {
                 const funciones = await getAllFunciones();
                 const filtered = funciones.filter((f) => {
-                    const nombreSala = f.idSala?.nombreSala?.toLowerCase() || "";
-                    const nombreSucursal = f.idSala?.idEstablecimiento?.nombreSucursal?.toLowerCase() || "";
+                    const nombreSala = f.nombreSala?.toLowerCase() || "";
+                    const nombreSucursal = f.nombreEstablecimiento?.toLowerCase() || "";
                     const nombreFuncion = f.nombreFuncion?.toLowerCase() || "";
+                    const tipoEstablecimiento = f.tipoEstablecimiento?.toLowerCase() || "";
                     const cat = categoryName.toLowerCase();
-                    return nombreSala.includes(cat) || nombreSucursal.includes(cat) || nombreFuncion.includes(cat);
+                    return nombreSala.includes(cat) || nombreSucursal.includes(cat) || nombreFuncion.includes(cat) || tipoEstablecimiento.includes(cat);
                 });
                 const mapped = filtered.map((f) => mapFuncionToEvento(f, categoryName));
                 setEventos(mapped);
