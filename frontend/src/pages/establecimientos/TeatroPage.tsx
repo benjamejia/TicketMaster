@@ -10,8 +10,8 @@ function mapFuncionToEvento(funcion: Funcion, categoria: string) {
         id: String(funcion.id),
         titulo: funcion.nombreFuncion,
         srcImg: PLACEHOLDER_IMAGES[categoria] || PLACEHOLDER_IMAGES["Teatro"],
-        precio: `$${(funcion.idSala?.precio || 0).toFixed(2)}`,
-        lugar: funcion.idSala?.idEstablecimiento?.nombreSucursal || "Por definir",
+        precio: `$${(funcion.precio || 0).toFixed(2)}`,
+        lugar: funcion.nombreEstablecimiento || "Por definir",
         categoria,
     };
 }
@@ -26,7 +26,8 @@ export function TeatroPage() {
             try {
                 const funciones = await getAllFunciones();
                 const teatroFunciones = funciones.filter(
-                    (f) => f.idSala?.idEstablecimiento?.nombreSucursal?.toLowerCase().includes("teatro") ||
+                    (f) => f.nombreEstablecimiento?.toLowerCase().includes("teatro") ||
+                           f.tipoEstablecimiento?.toLowerCase().includes("teatro") ||
                            f.nombreFuncion?.toLowerCase().includes("teatro")
                 );
                 const mapped = teatroFunciones.map((f) => mapFuncionToEvento(f, "Teatro"));

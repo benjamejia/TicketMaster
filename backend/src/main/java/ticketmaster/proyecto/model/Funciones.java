@@ -18,7 +18,7 @@ import lombok.Data;
 public class Funciones {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY )
-    private int id;
+    private Integer id;
     
     private String nombreFuncion;
     private LocalTime horario;

@@ -90,7 +90,7 @@ export function CheckoutPage() {
     }
   };
 
-  const precioPorBoleto = funcion?.idSala?.precio || 0;
+  const precioPorBoleto = funcion?.precio || 0;
 
   const calcularTotal = (): number => {
     return precioPorBoleto * formData.cantidadBoletos;
@@ -131,15 +131,12 @@ export function CheckoutPage() {
 
     try {
       const checkoutData: CheckoutRequest = {
-        funcion: { id: funcion.id },
-        ubicacion: funcion.idSala?.idEstablecimiento?.nombreSucursal || '',
-        fecha: `${funcion.fecha}T${funcion.horario}`,
+        funcionId: funcion.id,
         cantidadBoletos: formData.cantidadBoletos,
         asientos: formData.asientos.length > 0 ? formData.asientos : undefined,
         monto: calcularTotal(),
         metodoPago: formData.metodoPago,
         phoneNumber: formData.phoneNumber,
-        eventId: String(funcion.id),
       };
 
       const response = await processPurchase(checkoutData);
@@ -168,7 +165,7 @@ export function CheckoutPage() {
   };
 
   const tituloEvento = funcion?.nombreFuncion || 'Evento';
-  const lugarEvento = funcion?.idSala?.idEstablecimiento?.nombreSucursal || 'Por definir';
+  const lugarEvento = funcion?.nombreEstablecimiento || 'Por definir';
   const fechaEvento = funcion?.fecha ? new Date(`${funcion.fecha}T${funcion.horario}`).toLocaleDateString('es-MX') : 'Fecha por confirmar';
 
   if (loading) {
@@ -253,15 +250,15 @@ export function CheckoutPage() {
                 </div>
                </div>
 
-               {funcion && (
-                 <SeatSelection
-                   funcionId={funcion.id}
-                   tipoEstablecimiento={funcion.idSala?.idEstablecimiento?.tipoEstablecimiento?.tipo || ''}
-                   cantidadBoletos={formData.cantidadBoletos}
-                   asientosSeleccionados={formData.asientos}
-                   onAsientosChange={(asientos: string[]) => setFormData(prev => ({ ...prev, asientos }))}
-                 />
-               )}
+{funcion && (
+                  <SeatSelection
+                    funcionId={funcion.id}
+                    tipoEstablecimiento={funcion.tipoEstablecimiento || ''}
+                    cantidadBoletos={formData.cantidadBoletos}
+                    asientosSeleccionados={formData.asientos}
+                    onAsientosChange={(asientos: string[]) => setFormData(prev => ({ ...prev, asientos }))}
+                  />
+                )}
 
                <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
                  <h2 className="text-lg font-semibold text-on-background mb-4">

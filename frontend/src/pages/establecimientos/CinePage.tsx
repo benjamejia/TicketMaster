@@ -10,8 +10,8 @@ function mapFuncionToEvento(funcion: Funcion, categoria: string) {
         id: String(funcion.id),
         titulo: funcion.nombreFuncion,
         srcImg: PLACEHOLDER_IMAGES[categoria] || PLACEHOLDER_IMAGES["Cine"],
-        precio: `$${(funcion.idSala?.precio || 0).toFixed(2)}`,
-        lugar: funcion.idSala?.idEstablecimiento?.nombreSucursal || "Por definir",
+        precio: `$${(funcion.precio || 0).toFixed(2)}`,
+        lugar: funcion.nombreEstablecimiento || "Por definir",
         categoria,
     };
 }
@@ -26,7 +26,8 @@ export function CinePage() {
             try {
                 const funciones = await getAllFunciones();
                 const cineFunciones = funciones.filter(
-                    (f) => f.idSala?.idEstablecimiento?.nombreSucursal?.toLowerCase().includes("cine") ||
+                    (f) => f.nombreEstablecimiento?.toLowerCase().includes("cine") ||
+                           f.tipoEstablecimiento?.toLowerCase().includes("cine") ||
                            f.nombreFuncion?.toLowerCase().includes("cine")
                 );
                 const mapped = cineFunciones.map((f) => mapFuncionToEvento(f, "Cine"));

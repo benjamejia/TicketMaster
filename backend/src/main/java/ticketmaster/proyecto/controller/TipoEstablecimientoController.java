@@ -22,7 +22,7 @@ public class TipoEstablecimientoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TipoEstablecimiento> getTipoById(@PathVariable int id) {
+    public ResponseEntity<TipoEstablecimiento> getTipoById(@PathVariable Long id) {
         return tipoEstablecimientosRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

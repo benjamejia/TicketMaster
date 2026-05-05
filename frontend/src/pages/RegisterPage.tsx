@@ -17,7 +17,7 @@ interface RegisterRequestData {
     gender: string;
     email: string;
     country: string;
-    phoneNumber: number;
+    phoneNumber: string;
 }
 
 export function RegisterPage() {
@@ -36,6 +36,7 @@ export function RegisterPage() {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const { register, isAuthenticated } = useAuth();
     const navigate = useNavigate();
@@ -49,21 +50,34 @@ export function RegisterPage() {
         e.preventDefault();
         setError(null);
 
-        // --- Validaciones existentes ---
+        // --- Validaciones ---
         if (!acceptedTerms) {
             setError("Debes aceptar los términos y condiciones.");
             return;
         }
 
-        const phone = parseInt(phoneNumber, 10);
-        if (isNaN(phone)) {
-            setError("Ingresa un número de teléfono válido.");
+        if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) {
+            setError("Ingresa un número de teléfono válido (10-15 dígitos).");
             return;
         }
 
         if (!primerNombre.trim() || !username.trim() || !email.trim() || !password.trim()) {
-            setError("Todos los campos son obligatorios.");
+            setError("Los campos marcados con * son obligatorios.");
             return;
+        }
+
+        if (dateOfBirth) {
+            const today = new Date();
+            const birthDate = new Date(dateOfBirth);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            if (age < 18) {
+                setError("Debes ser mayor de 18 años para registrarte.");
+                return;
+            }
         }
 
         setIsLoading(true);
@@ -81,7 +95,7 @@ export function RegisterPage() {
                 gender,
                 email,
                 country,
-                phoneNumber: phone,
+                phoneNumber: phoneNumber,
             };
 
             await register(registerData);
@@ -149,48 +163,52 @@ export function RegisterPage() {
                         </p>
                     </div>
 
-                    {/* Error Message */}
-                    {error && (
-                        <div className="bg-error-container text-on-error-container px-4 py-3 rounded-2xl text-sm font-body font-medium">
-                            {error}
-                        </div>
-                    )}
+                    {/* Error Message Visualmente Destacado */}
+                     {error && (
+                         <div className="bg-error/10 border-2 border-error/30 text-on-error-container px-6 py-4 rounded-2xl text-base font-body font-semibold flex items-center gap-4 shadow-lg animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-500">
+                             <span className="material-symbols-outlined text-error text-3xl animate-shake">error</span>
+                             <div className="flex flex-col gap-1">
+                                 <span className="font-bold text-error text-sm uppercase tracking-wide">Error</span>
+                                 <span>{error}</span>
+                             </div>
+                         </div>
+                     )}
 
                     <form className="space-y-5" onSubmit={handleSubmit}>
 
                         {/* Input Nombre, Apellido y Nombre del Medio */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="primerNombre">
-                                    Primer Nombre
-                                </label>
-                                <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
-                                    <input
-                                        type="text"
-                                        id="primerNombre"
-                                        value={primerNombre}
-                                        onChange={(e) => setPrimerNombre(e.target.value)}
-                                        placeholder="María"
-                                        required
-                                        className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="primerApellido">
-                                    Segundo Nombre
-                                </label>
-                                <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
-                                    <input
-                                        type="text"
-                                        id="segundoNombre"
-                                        value={segundoNombre}
-                                        onChange={(e) => setSegundoNombre(e.target.value)}
-                                        placeholder="Rosa"
-                                        className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
-                                    />
-                                </div>
-                            </div>
+                                 <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="primerNombre">
+                                     Primer Nombre *
+                                 </label>
+                                 <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
+                                     <input
+                                         type="text"
+                                         id="primerNombre"
+                                         value={primerNombre}
+                                         onChange={(e) => setPrimerNombre(e.target.value)}
+                                         placeholder="María"
+                                         required
+                                         className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
+                                     />
+                                 </div>
+                             </div>
+                             <div className="space-y-2">
+                                 <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="segundoNombre">
+                                     Segundo Nombre
+                                 </label>
+                                 <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
+                                     <input
+                                         type="text"
+                                         id="segundoNombre"
+                                         value={segundoNombre}
+                                         onChange={(e) => setSegundoNombre(e.target.value)}
+                                         placeholder="Rosa (opcional)"
+                                         className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
+                                     />
+                                 </div>
+                             </div>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-3">    
@@ -239,14 +257,15 @@ export function RegisterPage() {
                                 </label>
                                 <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
                                     <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">calendar_today</span>
-                                    <input
-                                        type="date"
-                                        id="dateOfBirth"
-                                        value={dateOfBirth}
-                                        onChange={(e) => setDateOfBirth(e.target.value)}
-                                        required
-                                        className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
-                                    />
+                                 <input
+                                         type="date"
+                                         id="dateOfBirth"
+                                         value={dateOfBirth}
+                                         onChange={(e) => setDateOfBirth(e.target.value)}
+                                         required
+                                         max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                                         className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
+                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -327,23 +346,24 @@ export function RegisterPage() {
                                     />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="phone">
-                                    Teléfono
-                                </label>
-                                <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
-                                    <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">phone</span>
-                                    <input
-                                        type="tel"
-                                        id="phone"
-                                        value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
-                                        placeholder="5512345678"
-                                        required
-                                        className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
-                                    />
-                                </div>
-                            </div>
+                             <div className="space-y-2">
+                                 <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest font-body ml-1" htmlFor="phone">
+                                     Teléfono *
+                                 </label>
+                                 <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
+                                     <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">phone</span>
+                                     <input
+                                         type="tel"
+                                         id="phone"
+                                         value={phoneNumber}
+                                         onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                         placeholder="5512345678"
+                                         required
+                                         maxLength={15}
+                                         className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
+                                     />
+                                 </div>
+                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
@@ -389,19 +409,26 @@ export function RegisterPage() {
                             </label>
                             <div className="flex items-center px-4 gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all editorial-shadow group">
                                 <span className="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors">lock</span>
-                                <input
-                                    type="password"
-                                    id="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Mínimo 8 caracteres"
-                                    required
-                                    minLength={8}
-                                    className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
-                                />
-                                <button type="button" className="text-outline hover:text-primary transition-colors focus:outline-none p-1">
-                                    <span className="material-symbols-outlined">visibility_off</span>
-                                </button>
+                                 <input
+                                     type={showPassword ? "text" : "password"}
+                                     id="password"
+                                     value={password}
+                                     onChange={(e) => setPassword(e.target.value)}
+                                     placeholder="Mínimo 8 caracteres"
+                                     required
+                                     minLength={8}
+                                     className="w-full py-4 bg-transparent border-none focus:ring-0 text-on-surface font-medium placeholder:text-outline-variant outline-none font-body"
+                                 />
+                                 <button 
+                                     type="button" 
+                                     onClick={() => setShowPassword(!showPassword)}
+                                     className="text-outline hover:text-primary transition-colors focus:outline-none p-1"
+                                     title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                 >
+                                     <span className="material-symbols-outlined">
+                                         {showPassword ? "visibility" : "visibility_off"}
+                                     </span>
+                                 </button>
                             </div>
                         </div>
 

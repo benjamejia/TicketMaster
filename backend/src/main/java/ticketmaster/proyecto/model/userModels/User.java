@@ -75,8 +75,4 @@ public class User implements UserDetails {
         return this.password;
     }
 
-    public Object getTelefono() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getTelefono'");
     }
-}

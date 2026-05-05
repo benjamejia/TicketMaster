@@ -10,13 +10,13 @@ const PLACEHOLDER_IMAGES: Record<string, string> = {
 };
 
 function mapFuncionToEvento(funcion: Funcion) {
-    const tipoSala = funcion.idSala?.tipoSala?.toLowerCase() || "";
+    const tipoEstablecimiento = funcion.tipoEstablecimiento?.toLowerCase() || "";
     let categoria = "General";
-    if (tipoSala.includes("cine") || funcion.nombreFuncion?.toLowerCase().includes("cine")) {
+    if (tipoEstablecimiento.includes("cine") || funcion.nombreFuncion?.toLowerCase().includes("cine")) {
         categoria = "Cine";
-    } else if (tipoSala.includes("teatro") || funcion.nombreFuncion?.toLowerCase().includes("teatro")) {
+    } else if (tipoEstablecimiento.includes("teatro") || funcion.nombreFuncion?.toLowerCase().includes("teatro")) {
         categoria = "Teatro";
-    } else if (tipoSala.includes("museo") || funcion.nombreFuncion?.toLowerCase().includes("museo")) {
+    } else if (tipoEstablecimiento.includes("museo") || funcion.nombreFuncion?.toLowerCase().includes("museo")) {
         categoria = "Museo";
     }
 
@@ -24,16 +24,16 @@ function mapFuncionToEvento(funcion: Funcion) {
         id: String(funcion.id),
         titulo: funcion.nombreFuncion,
         srcImg: PLACEHOLDER_IMAGES[categoria] || PLACEHOLDER_IMAGES["General"],
-        lugar: funcion.idSala?.idEstablecimiento?.nombreSucursal || "Por definir",
+        lugar: funcion.nombreEstablecimiento || "Por definir",
         categoria,
-        descripcion: `Función de ${funcion.nombreFuncion} en ${funcion.idSala?.nombreSala || "la sala"}. Una experiencia cultural imperdible.`,
+        descripcion: `Función de ${funcion.nombreFuncion} en ${funcion.nombreSala || "la sala"}. Una experiencia cultural imperdible.`,
         duracion: "2h aproximadamente",
         clasificacion: funcion.clasificacion || "Apta para todo público",
     };
 }
 
 function mapFuncionToTiposTicket(funcion: Funcion) {
-    const precioBase = funcion.idSala?.precio || 0;
+    const precioBase = funcion.precio || 0;
     return [
         { id: "t1", nombre: "General", precio: precioBase, descripcion: "Acceso a zona general, asiento numerado", disponible: true, maxPorPersona: 6 },
         { id: "t2", nombre: "Preferente", precio: Math.round(precioBase * 1.5), descripcion: "Zona frontal con mejor visibilidad", disponible: true, maxPorPersona: 4 },

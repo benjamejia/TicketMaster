@@ -15,7 +15,7 @@ import lombok.Data;
 public class Salas {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY )
-    private int id;
+    private Integer id;
 
     private String tipoSala;
     private int precio;

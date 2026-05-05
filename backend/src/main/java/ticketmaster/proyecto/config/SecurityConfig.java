@@ -30,10 +30,19 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authRequest ->
-                authRequest
-                    .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register").permitAll()
-                    .requestMatchers("/auth/**").permitAll()
-                    .anyRequest().authenticated()
+            authRequest
+                .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register").permitAll()
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/funciones/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/sucursales/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/salas/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/tipos-establecimiento/**").permitAll()
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**"
+                ).permitAll()
+            .anyRequest().authenticated()
             )
             .sessionManagement(sessionManager ->
                 sessionManager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
