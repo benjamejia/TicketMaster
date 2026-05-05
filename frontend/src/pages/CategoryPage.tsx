@@ -1,8 +1,6 @@
+import { useEffect, useState } from "react";
 import { EventCard } from "../components/cards/EventCard";
-import caratulaReyLeon from '../assets/reyLeon.jpg';
-import avatarBanner from '../assets/avatarBanner.jpg';
-import hamlet from '../assets/hamlet.jpg';
-import marmol from '../assets/marmol.jpeg';
+import { getAllFunciones, type Funcion } from "../services/api-service";
 
 interface CategoryPageProps {
     title: string;
@@ -10,24 +8,71 @@ interface CategoryPageProps {
     categoryName: string;
 }
 
-export function CategoryPage({ title, description, categoryName }: CategoryPageProps) {
-    // 1. Simulamos una base de datos de eventos
-    const allEvents = [
-        { id: 1, titulo: "El Rey León", srcImg: caratulaReyLeon, precio: "$45.00", lugar: "Auditorio Nacional", categoria: "Teatro" },
-        { id: 2, titulo: "Avatar: The Way of Water", srcImg: avatarBanner, precio: "$12.00", lugar: "IMAX Prime", categoria: "Cine" },
-        { id: 3, titulo: "Mármol y Tiempo", srcImg: marmol, precio: "Gratis", lugar: "Museo Nacional", categoria: "Museo" },
-        { id: 4, titulo: "Hamlet: La Nueva Era", srcImg: hamlet, precio: "$30.00", lugar: "Gran Teatro Central", categoria: "Teatro" },
-        { id: 5, titulo: "Sombras en Neón", srcImg: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&auto=format&fit=crop&q=60", precio: "$10.00", lugar: "Cine Multiplex", categoria: "Cine" },
-        { id: 6, titulo: "Exposición Van Gogh", srcImg: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=500&auto=format&fit=crop&q=60", precio: "$15.00", lugar: "Galería de Arte Contemporáneo", categoria: "Museo" },
-    ];
+const PLACEHOLDER_IMAGES: Record<string, string> = {
+    "Cine": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=60",
+    "Teatro": "https://images.unsplash.com/photo-1503095396549-807759285036?w=500&auto=format&fit=crop&q=60",
+    "Museo": "https://images.unsplash.com/photo-1543857778-c4a1a5206609?w=500&auto=format&fit=crop&q=60",
+};
 
-    // 2. Filtramos los eventos para que solo queden los de esta categoría
-    const filteredEvents = allEvents.filter(evento => evento.categoria === categoryName);
+function mapFuncionToEvento(funcion: Funcion, categoria: string) {
+    return {
+        id: String(funcion.id),
+        titulo: funcion.nombreFuncion,
+        srcImg: PLACEHOLDER_IMAGES[categoria] || "https://images.unsplash.com/photo-1501612780353-7e5432707802?w=500&auto=format&fit=crop&q=60",
+        precio: `$${(funcion.idSala?.precio || 0).toFixed(2)}`,
+        lugar: funcion.idSala?.idEstablecimiento?.nombreSucursal || "Por definir",
+        categoria,
+    };
+}
+
+export function CategoryPage({ title, description, categoryName }: CategoryPageProps) {
+    const [eventos, setEventos] = useState<{ id: string; titulo: string; srcImg: string; precio: string; lugar: string; categoria: string }[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const cargarEventos = async () => {
+            try {
+                const funciones = await getAllFunciones();
+                const filtered = funciones.filter((f) => {
+                    const nombreSala = f.idSala?.nombreSala?.toLowerCase() || "";
+                    const nombreSucursal = f.idSala?.idEstablecimiento?.nombreSucursal?.toLowerCase() || "";
+                    const nombreFuncion = f.nombreFuncion?.toLowerCase() || "";
+                    const cat = categoryName.toLowerCase();
+                    return nombreSala.includes(cat) || nombreSucursal.includes(cat) || nombreFuncion.includes(cat);
+                });
+                const mapped = filtered.map((f) => mapFuncionToEvento(f, categoryName));
+                setEventos(mapped);
+            } catch {
+                setError("No se pudieron cargar los eventos");
+            } finally {
+                setLoading(false);
+            }
+        };
+        cargarEventos();
+    }, [categoryName]);
+
+    if (loading) {
+        return (
+            <div className="w-full flex flex-col min-h-screen items-center justify-center bg-background pt-12 pb-24 px-8">
+                <span className="material-symbols-outlined text-4xl text-primary animate-spin">progress_activity</span>
+                <p className="text-on-surface-variant mt-4">Cargando eventos...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="w-full flex flex-col min-h-screen items-center justify-center bg-background pt-12 pb-24 px-8">
+                <span className="material-symbols-outlined text-4xl text-error">error</span>
+                <p className="text-on-surface-variant mt-4">{error}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full flex flex-col min-h-screen bg-background pt-12 pb-24 px-8 max-w-screen-2xl mx-auto">
             
-            {/* Encabezado de la Categoría */}
             <div className="mb-12">
                 <h1 className="text-5xl font-extrabold text-on-background tracking-tighter font-headline mb-4 uppercase italic">
                     {title}
@@ -38,12 +83,12 @@ export function CategoryPage({ title, description, categoryName }: CategoryPageP
                 <div className="h-0.5 w-full bg-outline-variant/20 mt-8"></div>
             </div>
 
-            {/* Cuadrícula de Eventos Filtrados */}
-            {filteredEvents.length > 0 ? (
+            {eventos.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {filteredEvents.map((evento) => (
+                    {eventos.map((evento) => (
                         <EventCard 
                             key={evento.id}
+                            id={evento.id}
                             titulo={evento.titulo} 
                             srcImg={evento.srcImg} 
                             precio={evento.precio} 

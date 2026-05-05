@@ -1,23 +1,23 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   processPurchase, 
   type CheckoutRequest, 
   type PurchaseResponse,
-  getEventoById,
-  type Evento
+  getFuncionById,
+  type Funcion
 } from '../services/api-service';
+import { SeatSelection } from '../components/SeatSelection';
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { token } = useAuth();
 
-  // State para el evento seleccionado
-  const [evento, setEvento] = useState<Evento | null>(null);
+  const [funcion, setFuncion] = useState<Funcion | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // State del formulario
   const [formData, setFormData] = useState({
     cantidadBoletos: 1,
     asientos: [] as string[],
@@ -37,35 +37,22 @@ export function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [purchaseData, setPurchaseData] = useState<PurchaseResponse | null>(null);
 
-  // Cargar evento al montar el componente
   useEffect(() => {
-    const cargarEvento = async () => {
+    const cargarFuncion = async () => {
       try {
-        // Obtener ID del evento de la URL o del estado de navegación
-        const eventId = new URLSearchParams(window.location.search).get('eventId') || 'default';
+        const eventId = searchParams.get('eventId');
         
-        // Si no hay eventId válido, usar datos demo
-        const datosDemo: Evento = {
-          id: 'demo-1',
-          titulo: 'Concierto Estrella de Verano',
-          srcImg: 'https://images.unsplash.com/photo-1501612780353-7e5432707802?w=500&auto=format&fit=crop&q=60',
-          precio: 85.00,
-          lugar: 'Auditorio Metropolitano',
-          categoria: 'Concierto',
-          descripcion: 'Un espectacular concierto con artistas internacionales',
-          fecha: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          duracion: '3 horas',
-        };
-
-        // Intentar cargar desde el backend
-        if (eventId && eventId !== 'default') {
-          const eventoData = await getEventoById(eventId);
-          setEvento(eventoData || datosDemo);
+        if (eventId) {
+          const funcionData = await getFuncionById(parseInt(eventId));
+          if (funcionData) {
+            setFuncion(funcionData);
+          } else {
+            setError('Evento no encontrado');
+          }
         } else {
-          setEvento(datosDemo);
+          setError('No se especificó un evento para la compra');
         }
-      } catch (err) {
-        console.error('Error cargando evento:', err);
+      } catch {
         setError('Error al cargar los detalles del evento');
       } finally {
         setLoading(false);
@@ -73,14 +60,13 @@ export function CheckoutPage() {
     };
 
     if (token) {
-      cargarEvento();
+      cargarFuncion();
     } else {
       setError('Debes iniciar sesión para hacer una compra');
       setLoading(false);
     }
-  }, [token]);
+  }, [token, searchParams]);
 
-  // Validar autenticación
   useEffect(() => {
     if (!token) {
       navigate('/login');
@@ -104,8 +90,10 @@ export function CheckoutPage() {
     }
   };
 
+  const precioPorBoleto = funcion?.idSala?.precio || 0;
+
   const calcularTotal = (): number => {
-    return evento ? evento.precio * formData.cantidadBoletos : 0;
+    return precioPorBoleto * formData.cantidadBoletos;
   };
 
   const validarFormulario = (): boolean => {
@@ -137,21 +125,21 @@ export function CheckoutPage() {
     e.preventDefault();
     setError(null);
 
-    if (!validarFormulario() || !evento) return;
+    if (!validarFormulario() || !funcion) return;
 
     setProcessing(true);
 
     try {
       const checkoutData: CheckoutRequest = {
-        tipoEvento: evento.categoria,
-        ubicacion: evento.lugar,
-        fecha: evento.fecha || new Date().toISOString(),
+        funcion: { id: funcion.id },
+        ubicacion: funcion.idSala?.idEstablecimiento?.nombreSucursal || '',
+        fecha: `${funcion.fecha}T${funcion.horario}`,
         cantidadBoletos: formData.cantidadBoletos,
         asientos: formData.asientos.length > 0 ? formData.asientos : undefined,
         monto: calcularTotal(),
         metodoPago: formData.metodoPago,
         phoneNumber: formData.phoneNumber,
-        eventId: evento.id,
+        eventId: String(funcion.id),
       };
 
       const response = await processPurchase(checkoutData);
@@ -168,7 +156,6 @@ export function CheckoutPage() {
           paypalEmail: '',
         });
 
-        // Redirigir a página de confirmación después de 3 segundos
         setTimeout(() => {
           navigate(`/confirmation/${response.ticketId}`, { state: response });
         }, 3000);
@@ -180,6 +167,10 @@ export function CheckoutPage() {
     }
   };
 
+  const tituloEvento = funcion?.nombreFuncion || 'Evento';
+  const lugarEvento = funcion?.idSala?.idEstablecimiento?.nombreSucursal || 'Por definir';
+  const fechaEvento = funcion?.fecha ? new Date(`${funcion.fecha}T${funcion.horario}`).toLocaleDateString('es-MX') : 'Fecha por confirmar';
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -188,7 +179,7 @@ export function CheckoutPage() {
     );
   }
 
-  if (!evento) {
+  if (!funcion) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-on-background text-xl">Evento no encontrado</div>
@@ -199,7 +190,6 @@ export function CheckoutPage() {
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Encabezado */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-on-background mb-2">
             Finalizar Compra
@@ -210,34 +200,22 @@ export function CheckoutPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Formulario Principal */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Resumen del Evento */}
               <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
                 <h2 className="text-lg font-semibold text-on-background mb-4">
                   Detalles del Evento
                 </h2>
-                <div className="flex gap-4">
-                  <img
-                    src={evento.srcImg}
-                    alt={evento.titulo}
-                    className="w-32 h-32 rounded object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-on-surface">{evento.titulo}</h3>
-                    <p className="text-on-surface/70">{evento.lugar}</p>
-                    <p className="text-on-surface/70">
-                      {evento.fecha ? new Date(evento.fecha).toLocaleDateString('es-MX') : 'Fecha por confirmar'}
-                    </p>
-                    <p className="text-primary font-bold text-lg mt-2">
-                      ${evento.precio.toFixed(2)}
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="text-xl font-bold text-on-surface">{tituloEvento}</h3>
+                  <p className="text-on-surface/70">{lugarEvento}</p>
+                  <p className="text-on-surface/70">{fechaEvento}</p>
+                  <p className="text-primary font-bold text-lg mt-2">
+                    ${precioPorBoleto.toFixed(2)}
+                  </p>
                 </div>
               </div>
 
-              {/* Cantidad de Boletos */}
               <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
                 <h2 className="text-lg font-semibold text-on-background mb-4">
                   Cantidad de Boletos
@@ -273,13 +251,22 @@ export function CheckoutPage() {
                     +
                   </button>
                 </div>
-              </div>
+               </div>
 
-              {/* Método de Pago */}
-              <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
-                <h2 className="text-lg font-semibold text-on-background mb-4">
-                  Método de Pago
-                </h2>
+               {funcion && (
+                 <SeatSelection
+                   funcionId={funcion.id}
+                   tipoEstablecimiento={funcion.idSala?.idEstablecimiento?.tipoEstablecimiento?.tipo || ''}
+                   cantidadBoletos={formData.cantidadBoletos}
+                   asientosSeleccionados={formData.asientos}
+                   onAsientosChange={(asientos: string[]) => setFormData(prev => ({ ...prev, asientos }))}
+                 />
+               )}
+
+               <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
+                 <h2 className="text-lg font-semibold text-on-background mb-4">
+                   Método de Pago
+                 </h2>
                 <div className="space-y-4">
                   {['TARJETA_CREDITO', 'TARJETA_DEBITO', 'PAYPAL'].map(metodo => (
                     <label key={metodo} className="flex items-center gap-3 cursor-pointer">
@@ -299,7 +286,6 @@ export function CheckoutPage() {
                   ))}
                 </div>
 
-                {/* Datos de Tarjeta */}
                 {(formData.metodoPago === 'TARJETA_CREDITO' || formData.metodoPago === 'TARJETA_DEBITO') && (
                   <div className="mt-4 space-y-4 border-t border-outline-variant/20 pt-4">
                     <div>
@@ -357,7 +343,6 @@ export function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Email PayPal */}
                 {formData.metodoPago === 'PAYPAL' && (
                   <div className="mt-4 border-t border-outline-variant/20 pt-4">
                     <label className="block text-on-background text-sm mb-2">
@@ -375,7 +360,6 @@ export function CheckoutPage() {
                 )}
               </div>
 
-              {/* Contacto WhatsApp */}
               <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
                 <h2 className="text-lg font-semibold text-on-background mb-4">
                   Confirmación por WhatsApp
@@ -396,14 +380,12 @@ export function CheckoutPage() {
                 />
               </div>
 
-              {/* Mensajes de Error */}
               {error && (
                 <div className="bg-error/10 border border-error rounded-lg p-4">
                   <p className="text-error">{error}</p>
                 </div>
               )}
 
-              {/* Botón de Compra */}
               <button
                 type="submit"
                 disabled={processing}
@@ -418,7 +400,6 @@ export function CheckoutPage() {
             </form>
           </div>
 
-          {/* Resumen de Compra */}
           <div className="lg:col-span-1">
             <div className="bg-surface p-6 rounded-lg border border-outline-variant/20 sticky top-4">
               <h2 className="text-xl font-bold text-on-background mb-6">Resumen</h2>
@@ -426,7 +407,7 @@ export function CheckoutPage() {
               <div className="space-y-4 mb-6 pb-6 border-b border-outline-variant/20">
                 <div className="flex justify-between text-on-background">
                   <span>Boletos: {formData.cantidadBoletos}</span>
-                  <span>${(evento.precio * formData.cantidadBoletos).toFixed(2)}</span>
+                  <span>${(precioPorBoleto * formData.cantidadBoletos).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-on-background/70 text-sm">
                   <span>Tarifa de servicio</span>
@@ -441,7 +422,6 @@ export function CheckoutPage() {
                 </span>
               </div>
 
-              {/* Mensaje de Éxito */}
               {success && purchaseData && (
                 <div className="bg-success/10 border border-success rounded-lg p-4">
                   <p className="text-success font-bold mb-2">¡Compra Exitosa!</p>

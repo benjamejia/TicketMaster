@@ -1,22 +1,73 @@
+import { useEffect, useState } from "react";
 import { EventCard } from "../../components/cards/EventCard";
+import { getAllFunciones, type Funcion } from "../../services/api-service";
+import { CATEGORY_IMAGES, HERO_IMAGES } from "../../types/constants";
+
+const PLACEHOLDER_IMAGES = CATEGORY_IMAGES;
+
+function mapFuncionToEvento(funcion: Funcion, categoria: string) {
+    return {
+        id: String(funcion.id),
+        titulo: funcion.nombreFuncion,
+        srcImg: PLACEHOLDER_IMAGES[categoria] || PLACEHOLDER_IMAGES["Teatro"],
+        precio: `$${(funcion.idSala?.precio || 0).toFixed(2)}`,
+        lugar: funcion.idSala?.idEstablecimiento?.nombreSucursal || "Por definir",
+        categoria,
+    };
+}
 
 export function TeatroPage() {
-    const eventos = [
-        { id: "t1", titulo: "El Rey León: Soundtrack", srcImg: "https://images.unsplash.com/photo-1503095396549-807759285036?w=500&auto=format&fit=crop&q=60", precio: 45.00, lugar: "Auditorio Nacional", categoria: "Teatro" },
-        { id: "t2", titulo: "Hamlet: Versión Libre", srcImg: "https://images.unsplash.com/photo-1585699324551-f6c30889516a?w=500&auto=format&fit=crop&q=60", precio: 30.00, lugar: "Teatro Colón", categoria: "Teatro" },
-        { id: "t3", titulo: "La Casa de Bernarda Alba", srcImg: "https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=500&auto=format&fit=crop&q=60", precio: 25.00, lugar: "Teatro Nacional", categoria: "Teatro" },
-        { id: "t4", titulo: "Romeo y Julieta Moderna", srcImg: "https://images.unsplash.com/photo-1460723234454-004284666368?w=500&auto=format&fit=crop&q=60", precio: 35.00, lugar: "Arena Cultural", categoria: "Teatro" },
-        { id: "t5", titulo: "Don Quijote en Escena", srcImg: "https://images.unsplash.com/photo-1547153760-18fc36a87747?w=500&auto=format&fit=crop&q=60", precio: 28.00, lugar: "Teatro Municipal", categoria: "Teatro" },
-        { id: "t6", titulo: "Bodas de Sangre", srcImg: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&auto=format&fit=crop&q=60", precio: 22.00, lugar: "Teatro Español", categoria: "Teatro" },
-    ];
+    const [eventos, setEventos] = useState<{ id: string; titulo: string; srcImg: string; precio: string; lugar: string; categoria: string }[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const cargarEventos = async () => {
+            try {
+                const funciones = await getAllFunciones();
+                const teatroFunciones = funciones.filter(
+                    (f) => f.idSala?.idEstablecimiento?.nombreSucursal?.toLowerCase().includes("teatro") ||
+                           f.nombreFuncion?.toLowerCase().includes("teatro")
+                );
+                const mapped = teatroFunciones.map((f) => mapFuncionToEvento(f, "Teatro"));
+                if (mapped.length > 0) {
+                    setEventos(mapped);
+                } else {
+                    setEventos(funciones.slice(0, 6).map((f) => mapFuncionToEvento(f, "Teatro")));
+                }
+            } catch {
+                setError("No se pudieron cargar los eventos");
+            } finally {
+                setLoading(false);
+            }
+        };
+        cargarEventos();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col w-full min-h-[50vh] items-center justify-center">
+                <span className="material-symbols-outlined text-4xl text-primary animate-spin">progress_activity</span>
+                <p className="text-on-surface-variant mt-4">Cargando cartelera...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col w-full min-h-[50vh] items-center justify-center">
+                <span className="material-symbols-outlined text-4xl text-error">error</span>
+                <p className="text-on-surface-variant mt-4">{error}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col w-full">
-            {/* Hero Banner */}
             <section className="relative h-80 overflow-hidden">
                 <div className="absolute inset-0 bg-linear-to-t from-primary/95 via-primary/60 to-transparent z-10"></div>
                 <img
-                    src="https://images.unsplash.com/photo-1503095396549-807759285036?w=1200&auto=format&fit=crop&q=60"
+                    src={HERO_IMAGES["Teatro"]}
                     alt="Teatro"
                     className="w-full h-full object-cover"
                 />
@@ -27,7 +78,6 @@ export function TeatroPage() {
                 </div>
             </section>
 
-            {/* Events Grid */}
             <section className="px-8 py-16 max-w-screen-2xl mx-auto w-full">
                 <div className="flex items-center gap-4 mb-12">
                     <div className="h-0.5 flex-1 bg-outline-variant/15"></div>
@@ -35,18 +85,26 @@ export function TeatroPage() {
                     <div className="h-0.5 flex-1 bg-outline-variant/15"></div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {eventos.map((evt) => (
-                        <EventCard
-                            key={evt.id}
-                            titulo={evt.titulo}
-                            srcImg={evt.srcImg}
-                            precio={`$${evt.precio.toFixed(2)}`}
-                            lugar={evt.lugar}
-                            categoria={evt.categoria}
-                        />
-                    ))}
-                </div>
+                {eventos.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {eventos.map((evt) => (
+                            <EventCard
+                                key={evt.id}
+                                id={evt.id}
+                                titulo={evt.titulo}
+                                srcImg={evt.srcImg}
+                                precio={evt.precio}
+                                lugar={evt.lugar}
+                                categoria={evt.categoria}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-64 bg-surface-container-low rounded-3xl border border-outline-variant/20">
+                        <span className="material-symbols-outlined text-4xl text-outline-variant mb-2">event_busy</span>
+                        <p className="text-on-surface-variant font-medium">No hay funciones disponibles en cartelera por ahora.</p>
+                    </div>
+                )}
             </section>
         </div>
     );

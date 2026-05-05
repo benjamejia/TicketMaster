@@ -9,9 +9,8 @@ const api = axios.create({
   },
 });
 
-// Agregar token JWT a cada petición
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('jwt_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -19,64 +18,178 @@ api.interceptors.request.use((config) => {
 });
 
 // =====================================================
-// SERVICIOS DE EVENTOS
+// SUCURSALES / ESTABLECIMIENTOS
 // =====================================================
 
-export interface Evento {
-  id: string;
-  titulo: string;
-  srcImg: string;
-  precio: number;
-  lugar: string;
-  categoria: string;
-  descripcion?: string;
-  fecha?: string;
-  duracion?: string;
+export interface Sucursal {
+  id: number;
+  nombreSucursal: string;
+  ubicacion: string;
+  tipoEstablecimiento: {
+    id: number;
+    tipo: string;
+  };
 }
 
-export const getEventosByCategorias = async (categoria: string): Promise<Evento[]> => {
-  try {
-    const response = await api.get(`/eventos/categoria/${categoria}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error obteniendo eventos de ${categoria}:`, error);
-    return [];
-  }
+export const getAllSucursales = async (): Promise<Sucursal[]> => {
+  const response = await api.get('/sucursales');
+  return response.data;
 };
 
-export const getEventoById = async (id: string): Promise<Evento | null> => {
+export const getSucursalById = async (id: number): Promise<Sucursal | null> => {
   try {
-    const response = await api.get(`/eventos/${id}`);
+    const response = await api.get(`/sucursales/${id}`);
     return response.data;
-  } catch (error) {
-    console.error(`Error obteniendo evento ${id}:`, error);
+  } catch {
     return null;
   }
 };
 
-export const getAllEventos = async (): Promise<Evento[]> => {
-  try {
-    const response = await api.get('/eventos');
-    return response.data;
-  } catch (error) {
-    console.error('Error obteniendo eventos:', error);
-    return [];
-  }
+export const getSucursalesByTipo = async (tipoId: number): Promise<Sucursal[]> => {
+  const response = await api.get(`/sucursales/tipo/${tipoId}`);
+  return response.data;
 };
 
 // =====================================================
-// SERVICIOS DE CHECKOUT Y COMPRA
+// FUNCIONES (Eventos/Shows)
+// =====================================================
+
+export interface Funcion {
+  id: number;
+  nombreFuncion: string;
+  horario: string;
+  fecha: string;
+  clasificacion: string;
+  idSala: {
+    id: number;
+    tipoSala: string;
+    precio: number;
+    nombreSala: string;
+    capacidad: number;
+    idEstablecimiento: {
+      id: number;
+      nombreSucursal: string;
+      ubicacion: string;
+      tipoEstablecimiento?: {
+        id: number;
+        tipo: string;
+      };
+    };
+  };
+}
+
+export const getAllFunciones = async (): Promise<Funcion[]> => {
+  const response = await api.get('/funciones');
+  return response.data;
+};
+
+export const getFuncionById = async (id: number): Promise<Funcion | null> => {
+  try {
+    const response = await api.get(`/funciones/${id}`);
+    return response.data;
+  } catch {
+    return null;
+  }
+};
+
+export const getFuncionesBySala = async (salaId: number): Promise<Funcion[]> => {
+  const response = await api.get(`/funciones/sala/${salaId}`);
+  return response.data;
+};
+
+// =====================================================
+// SALAS
+// =====================================================
+
+export interface Sala {
+  id: number;
+  tipoSala: string;
+  precio: number;
+  nombreSala: string;
+  capacidad: number;
+  idEstablecimiento: {
+    id: number;
+    nombreSucursal: string;
+    ubicacion: string;
+  };
+}
+
+export const getAllSalas = async (): Promise<Sala[]> => {
+  const response = await api.get('/salas');
+  return response.data;
+};
+
+export const getSalaById = async (id: number): Promise<Sala | null> => {
+  try {
+    const response = await api.get(`/salas/${id}`);
+    return response.data;
+  } catch {
+    return null;
+  }
+};
+
+export const getSalasByEstablecimiento = async (establecimientoId: number): Promise<Sala[]> => {
+  const response = await api.get(`/salas/establecimiento/${establecimientoId}`);
+  return response.data;
+};
+
+// =====================================================
+// ASIENTOS
+// =====================================================
+
+export interface Asiento {
+  id: number;
+  fila: string;
+  numeroAsiento: number;
+  idSala: {
+    id: number;
+  };
+}
+
+export const getAsientosForFunction = async (funcionId: number): Promise<Asiento[]> => {
+  const response = await api.get(`/funciones/${funcionId}/asientos`);
+  return response.data;
+};
+
+export const getAsientosDisponibles = async (funcionId: number): Promise<Asiento[]> => {
+  const response = await api.get(`/funciones/${funcionId}/asientos-disponibles`);
+  return response.data;
+};
+
+export const getAsientosOcupados = async (funcionId: number): Promise<string[]> => {
+  const response = await api.get(`/funciones/${funcionId}/asientos-ocupados`);
+  return response.data;
+};
+
+// =====================================================
+// TIPOS DE ESTABLECIMIENTO
+// =====================================================
+
+export interface TipoEstablecimiento {
+  id: number;
+  tipo: string;
+}
+
+export const getAllTiposEstablecimiento = async (): Promise<TipoEstablecimiento[]> => {
+  const response = await api.get('/tipos-establecimiento');
+  return response.data;
+};
+
+// =====================================================
+// CHECKOUT Y COMPRA
 // =====================================================
 
 export interface CheckoutRequest {
-  tipoEvento: string;
+  funcion?: {
+    id: number;
+  };
   ubicacion: string;
-  fecha: string; // ISO format: yyyy-MM-ddTHH:mm:ss
+  fecha: string;
   cantidadBoletos: number;
   asientos?: string[];
   monto: number;
-  metodoPago: 'TARJETA_DEBITO' | 'TARJETA_CREDITO' | 'PAYPAL';
-  phoneNumber: string; // Con código de país: +521234567890
+  metodoPago: string;
+  phoneNumber: string;
   eventId?: string;
 }
 
@@ -86,7 +199,7 @@ export interface PurchaseResponse {
   confirmationNumber: string;
   ticketId: number;
   transactionId: number;
-  qrCode: string; // Base64
+  qrCode: string;
   whatsAppSent: boolean;
 }
 
@@ -102,22 +215,39 @@ export const processPurchase = async (data: CheckoutRequest): Promise<PurchaseRe
   }
 };
 
-export const getTicketDetails = async (ticketId: number) => {
+export interface TransactionDetail {
+  id: number;
+  confirmationNumber: string;
+  estado: string;
+  monto: number;
+  metodoPago: string;
+  fecha: string;
+  qrCode: string;
+  ticket: {
+    id: number;
+    tipoEvento: string;
+    ubicacion: string;
+    fecha: string;
+    cantidadBoletos: number;
+    asientos: string[];
+    fechaCompra: string;
+  };
+}
+
+export const getTicketDetails = async (ticketId: number): Promise<TransactionDetail | null> => {
   try {
     const response = await api.get(`/checkout/ticket/${ticketId}`);
     return response.data;
-  } catch (error) {
-    console.error('Error obteniendo detalles del ticket:', error);
+  } catch {
     return null;
   }
 };
 
-export const getMyTickets = async () => {
+export const getMyTickets = async (): Promise<any[]> => {
   try {
     const response = await api.get('/checkout/my-tickets');
     return response.data;
-  } catch (error) {
-    console.error('Error obteniendo mis tickets:', error);
+  } catch {
     return [];
   }
 };
@@ -126,49 +256,25 @@ export const resendWhatsAppConfirmation = async (
   ticketId: number,
   phoneNumber: string
 ): Promise<any> => {
-  try {
-    const response = await api.post(
-      `/checkout/resend-whatsapp/${ticketId}`,
-      { phoneNumber }
-    );
-    return response.data;
-  } catch (error) {
-    console.error('Error reenviando confirmación:', error);
-    throw error;
-  }
+  const response = await api.post(
+    `/checkout/resend-whatsapp/${ticketId}`,
+    { phoneNumber }
+  );
+  return response.data;
 };
 
 // =====================================================
-// SERVICIOS DE AUTENTICACIÓN
+// AUTENTICACIÓN
 // =====================================================
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  nombre: string;
-  email: string;
-  password: string;
-  telefono?: string;
-}
-
-export interface AuthResponse {
-  token: string;
-  usuario: {
-    id: number;
-    nombre: string;
-    email: string;
-    telefono?: string;
-  };
-}
-
-export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
+export const login = async (usernameOrCurp: string, password: string): Promise<{ token: string }> => {
   try {
-    const response = await api.post('/auth/login', credentials);
+    const response = await api.post('/auth/login', {
+      usernameOrCurp,
+      password,
+    });
     if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('jwt_token', response.data.token);
     }
     return response.data;
   } catch (error) {
@@ -179,11 +285,26 @@ export const login = async (credentials: LoginRequest): Promise<AuthResponse> =>
   }
 };
 
-export const register = async (data: RegisterRequest): Promise<AuthResponse> => {
+export interface RegisterData {
+  username: string;
+  password: string;
+  primerNombre: string;
+  segundoNombre: string;
+  primerApellido: string;
+  segundoApellido: string;
+  dateOfBirth: string;
+  stateOfBirth: string;
+  gender: string;
+  email: string;
+  country: string;
+  phoneNumber: number;
+}
+
+export const register = async (data: RegisterData): Promise<{ token: string }> => {
   try {
     const response = await api.post('/auth/register', data);
     if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('jwt_token', response.data.token);
     }
     return response.data;
   } catch (error) {

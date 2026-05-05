@@ -6,6 +6,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import ticketmaster.proyecto.dto.CheckoutRequestDTO;
 import ticketmaster.proyecto.dto.PurchaseResponseDTO;
+import ticketmaster.proyecto.dto.TicketDetailDTO;
+import ticketmaster.proyecto.dto.TransactionDetailDTO;
 import ticketmaster.proyecto.model.TicketUsuario;
 import ticketmaster.proyecto.model.Transacciones;
 import ticketmaster.proyecto.model.Funciones;
@@ -20,9 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/checkout")
@@ -58,7 +62,7 @@ public class CheckoutController {
             }
 
             String username = authentication.getName();
-            Optional<User> userOpt = userRepository.findByEmail(username);
+            Optional<User> userOpt = userRepository.findByUsername(username);
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(404).body(createErrorResponse("Usuario no encontrado"));
             }
@@ -128,41 +132,7 @@ public class CheckoutController {
         }
     }
 
-    // ... resto de métodos sin cambios ...
-    @PostMapping("/procesar-compra")
-    public ResponseEntity<?> procesarCompra(@RequestBody CheckoutRequestDTO request) {
-        try {
-            // 1. Hardcodeamos o extraemos datos del usuario (puedes usar SecurityContextHolder)
-            User usuario = userRepository.findByEmail("usuario_ejemplo@mail.com")
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-            // 2. Crear y persistir la Transacción
-            Transacciones transaccion = new Transacciones();
-            transaccion.setId_usuario(usuario);
-            transaccion.setTotal(request.getMonto()); // Dato que viene del frontend
-            transaccion.setFecha(LocalDateTime.now());
-            
-            // Generar un código QR ficticio o real usando tu QRCodeGeneratorService
-            String qrData = "Ticket-" + System.currentTimeMillis();
-            String qrBase64 = qrCodeGenerator.generateQRCode(qrData);
-            transaccion.setCodigoQR(qrBase64);
-
-            // Guardar en la base de datos
-            Transacciones guardada = transaccionRepository.save(transaccion);
-
-            // 3. Enviar mensaje por WhatsApp usando tu WhatsAppService
-            // Hardcodeamos el número para pruebas o usamos el del usuario
-            String mensaje = "¡Hola " + usuario.getPrimerNombre() + "! Tu compra por $" + 
-                            request.getMonto() + " ha sido exitosa. ID: " + guardada.getId();
-            
-            whatsAppService.sendWhatsAppMessage(usuario.getTelefono(), mensaje);
-
-            return ResponseEntity.ok(new PurchaseResponseDTO(null, mensaje, mensaje, guardada.getId(), 0, "Compra exitosa", null));
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error al procesar: " + e.getMessage());
-        }
-    }
+    // Endpoint duplicado eliminado - usar /process en su lugar
     // FIX en resend: recibe phoneNumber del body, no del @RequestParam
     @PostMapping("/resend-whatsapp/{ticketId}")
     public ResponseEntity<?> resendWhatsAppConfirmation(
@@ -179,19 +149,68 @@ public class CheckoutController {
                 return ResponseEntity.status(404).body(createErrorResponse("Ticket no encontrado"));
             }
 
-            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+Optional<User> userOpt = userRepository.findByUsername(authentication.getName());
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(404).body(createErrorResponse("Usuario no encontrado"));
             }
 
-            // Aquí podrías buscar la transacción y reenviar
-            // boolean sent = whatsAppService.sendPurchaseConfirmation(phoneNumber, ...);
+            TicketUsuario ticket = ticketOpt.get();
+            Optional<Transacciones> transaccionOpt = transaccionRepository.findByTicketId(ticketId);
 
-            return ResponseEntity.ok(Map.of("message", "Confirmación reenviada", "success", true));
+            TicketDetailDTO dto = new TicketDetailDTO();
+            dto.setId((long) ticket.getIdTicket());
+            dto.setFecha(ticket.getFecha());
+            dto.setAsientos(ticket.getAsientos());
 
+            if (ticket.getFuncion() != null) {
+                dto.setTipoEvento(ticket.getFuncion().getNombreFuncion());
+                dto.setUbicacion(ticket.getFuncion().getIdSala().getNombreSala());
+            }
+
+            if (transaccionOpt.isPresent()) {
+                Transacciones transaccion = transaccionOpt.get();
+                TransactionDetailDTO transaccionDTO = new TransactionDetailDTO();
+                transaccionDTO.setId((long) transaccion.getId());
+                transaccionDTO.setConfirmationNumber(transaccion.getNumeroConfirmacion());
+                transaccionDTO.setEstado(transaccion.getEstado());
+                transaccionDTO.setMonto(transaccion.getMonto());
+                transaccionDTO.setMetodoPago(transaccion.getMetodoPago());
+                transaccionDTO.setFecha(transaccion.getFecha());
+                transaccionDTO.setQrCode(transaccion.getCodigoQR());
+                transaccionDTO.setTicket(dto);
+                return ResponseEntity.ok(transaccionDTO);
+            }
+
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
-            log.error("Error reenviando confirmación: {}", e.getMessage());
-            return ResponseEntity.status(500).body(createErrorResponse("Error al reenviar confirmación"));
+            log.error("Error obteniendo ticket: {}", e.getMessage());
+            return ResponseEntity.status(500).body(createErrorResponse("Error al obtener el ticket"));
+        }
+    }
+
+    @GetMapping("/my-tickets")
+    public ResponseEntity<?> getMyTickets(Authentication authentication) {
+        try {
+if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(createErrorResponse("Usuario no autenticado"));
+            }
+
+            String username = authentication.getName();
+            Optional<User> userOpt = userRepository.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(createErrorResponse("Usuario no encontrado"));
+            }
+
+            User user = userOpt.get();
+
+            List<TicketUsuario> tickets = ticketRepository.findAll().stream()
+                    .filter(t -> t.getUsuario() != null && t.getUsuario().getId().equals(user.getId()))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(tickets);
+        } catch (Exception e) {
+            log.error("Error obteniendo tickets del usuario: {}", e.getMessage());
+            return ResponseEntity.status(500).body(createErrorResponse("Error al obtener los tickets"));
         }
     }
 

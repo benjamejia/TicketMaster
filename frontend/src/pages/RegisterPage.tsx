@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import avatarBanner from '../assets/avatarBanner.jpg';
 import { FEDERAL_ENTITIES, type StateCode } from "../types/types";
+import Swal from "sweetalert2";
 
 interface RegisterRequestData {
     username: string;
@@ -48,6 +49,7 @@ export function RegisterPage() {
         e.preventDefault();
         setError(null);
 
+        // --- Validaciones existentes ---
         if (!acceptedTerms) {
             setError("Debes aceptar los términos y condiciones.");
             return;
@@ -59,7 +61,7 @@ export function RegisterPage() {
             return;
         }
 
-        if (!primerNombre.trim() || !segundoNombre.trim() || !username.trim() || !email.trim() || !password.trim() || !country.trim() || !gender || !dateOfBirth) {
+        if (!primerNombre.trim() || !username.trim() || !email.trim() || !password.trim()) {
             setError("Todos los campos son obligatorios.");
             return;
         }
@@ -83,8 +85,21 @@ export function RegisterPage() {
             };
 
             await register(registerData);
+
+            // --- ALERTA DE ÉXITO ---
+            await Swal.fire({
+                title: '¡Bienvenido a la cultura!',
+                text: 'Tu cuenta ha sido creada exitosamente.',
+                icon: 'success',
+                confirmButtonText: 'Comenzar ahora',
+                confirmButtonColor: '#5D3FD3', // Color primario de tu app
+                showClass: {
+                    popup: 'animate__animated animate__fadeInUp animate__faster'
+                }
+            });
+
             navigate("/");
-        } catch {
+        } catch (err) {
             setError("Error al crear la cuenta. El nombre de usuario podría ya estar en uso.");
         } finally {
             setIsLoading(false);
