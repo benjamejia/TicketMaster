@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import ticketmaster.proyecto.dto.CheckoutRequestDTO;
+import ticketmaster.proyecto.dto.MyTicketDTO;
 import ticketmaster.proyecto.dto.PurchaseResponseDTO;
 import ticketmaster.proyecto.dto.TicketDetailDTO;
 import ticketmaster.proyecto.dto.TransactionDetailDTO;
@@ -73,19 +74,18 @@ public class CheckoutController {
                 return ResponseEntity.badRequest().body(createErrorResponse("Cantidad de boletos o monto inválido"));
             }
 
-            // Buscar la función si viene un ID
-            // FIX: ya no se llama setAsientos dos veces, y se setea la función correctamente
+            // Buscar la función por ID
             TicketUsuario ticket = new TicketUsuario();
             ticket.setUsuario(user);
             ticket.setAsientos(request.getAsientos());
             ticket.setFecha(LocalDateTime.now());
 
-            if (request.getFuncion() != null) {
-                Optional<Funciones> funcionOpt = funcionesRepository.findById(request.getFuncion().getId());
+            if (request.getFuncionId() != null) {
+                Optional<Funciones> funcionOpt = funcionesRepository.findById(request.getFuncionId());
                 funcionOpt.ifPresent(ticket::setFuncion);
             }
 
-            TicketUsuario savedTicket = ticketRepository.save(ticket); // ← SE GUARDA
+            TicketUsuario savedTicket = ticketRepository.save(ticket);
 
             // Crear y GUARDAR transacción
             String numeroConfirmacion = generarNumeroConfirmacion();
@@ -137,7 +137,7 @@ public class CheckoutController {
     @PostMapping("/resend-whatsapp/{ticketId}")
     public ResponseEntity<?> resendWhatsAppConfirmation(
             @PathVariable int ticketId,
-            @RequestBody Map<String, String> body, // ← FIX: era @RequestParam
+            @RequestBody Map<String, String> body,
             Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
@@ -149,42 +149,45 @@ public class CheckoutController {
                 return ResponseEntity.status(404).body(createErrorResponse("Ticket no encontrado"));
             }
 
-Optional<User> userOpt = userRepository.findByUsername(authentication.getName());
+            Optional<User> userOpt = userRepository.findByUsername(authentication.getName());
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(404).body(createErrorResponse("Usuario no encontrado"));
             }
 
+            User user = userOpt.get();
             TicketUsuario ticket = ticketOpt.get();
+
+            if (!ticket.getUsuario().getId().equals(user.getId())) {
+                return ResponseEntity.status(403).body(createErrorResponse("No tienes permiso para acceder a este ticket"));
+            }
+
+            String phoneNumber = body.get("phoneNumber");
+            if (phoneNumber == null || phoneNumber.isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("El número de teléfono es requerido"));
+            }
+
             Optional<Transacciones> transaccionOpt = transaccionRepository.findByTicketId(ticketId);
-
-            TicketDetailDTO dto = new TicketDetailDTO();
-            dto.setId((long) ticket.getIdTicket());
-            dto.setFecha(ticket.getFecha());
-            dto.setAsientos(ticket.getAsientos());
-
-            if (ticket.getFuncion() != null) {
-                dto.setTipoEvento(ticket.getFuncion().getNombreFuncion());
-                dto.setUbicacion(ticket.getFuncion().getIdSala().getNombreSala());
+            if (transaccionOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(createErrorResponse("Transacción no encontrada para este ticket"));
             }
 
-            if (transaccionOpt.isPresent()) {
-                Transacciones transaccion = transaccionOpt.get();
-                TransactionDetailDTO transaccionDTO = new TransactionDetailDTO();
-                transaccionDTO.setId((long) transaccion.getId());
-                transaccionDTO.setConfirmationNumber(transaccion.getNumeroConfirmacion());
-                transaccionDTO.setEstado(transaccion.getEstado());
-                transaccionDTO.setMonto(transaccion.getMonto());
-                transaccionDTO.setMetodoPago(transaccion.getMetodoPago());
-                transaccionDTO.setFecha(transaccion.getFecha());
-                transaccionDTO.setQrCode(transaccion.getCodigoQR());
-                transaccionDTO.setTicket(dto);
-                return ResponseEntity.ok(transaccionDTO);
+            Transacciones transaccion = transaccionOpt.get();
+            boolean sent = whatsAppService.sendPurchaseConfirmation(
+                    phoneNumber,
+                    ticket,
+                    transaccion,
+                    user.getPrimerNombre()
+            );
+
+            if (sent) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "WhatsApp reenviado exitosamente"));
+            } else {
+                return ResponseEntity.status(500).body(createErrorResponse("Error al reenviar el mensaje de WhatsApp"));
             }
 
-            return ResponseEntity.ok(dto);
         } catch (Exception e) {
-            log.error("Error obteniendo ticket: {}", e.getMessage());
-            return ResponseEntity.status(500).body(createErrorResponse("Error al obtener el ticket"));
+            log.error("Error reenviando confirmación de WhatsApp: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(createErrorResponse("Error al reenviar el mensaje de WhatsApp"));
         }
     }
 
@@ -203,8 +206,20 @@ if (authentication == null || !authentication.isAuthenticated()) {
 
             User user = userOpt.get();
 
-            List<TicketUsuario> tickets = ticketRepository.findAll().stream()
+            List<MyTicketDTO> tickets = ticketRepository.findAll().stream()
                     .filter(t -> t.getUsuario() != null && t.getUsuario().getId().equals(user.getId()))
+                    .map(t -> {
+                        MyTicketDTO dto = new MyTicketDTO();
+                        dto.setIdTicket((long) t.getIdTicket());
+                        dto.setAsientos(t.getAsientos());
+                        dto.setFecha(t.getFecha());
+                        if (t.getFuncion() != null) {
+                            dto.setNombreFuncion(t.getFuncion().getNombreFuncion());
+                            dto.setUbicacion(t.getFuncion().getIdSala().getNombreSala());
+                            dto.setClasificacion(t.getFuncion().getClasificacion());
+                        }
+                        return dto;
+                    })
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(tickets);

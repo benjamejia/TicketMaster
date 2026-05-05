@@ -3,6 +3,7 @@ package ticketmaster.proyecto.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ticketmaster.proyecto.dto.FuncionDTO;
 import ticketmaster.proyecto.model.Funciones;
 import ticketmaster.proyecto.model.Salas;
 import ticketmaster.proyecto.model.cineModels.Asientos;
@@ -28,27 +29,53 @@ public class FuncionesController {
     private TicketUsuarioRepository ticketUsuarioRepository;
 
     @GetMapping
-    public ResponseEntity<List<Funciones>> getAllFunciones() {
-        return ResponseEntity.ok(funcionesRepository.findAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Funciones> getFuncionById(@PathVariable int id) {
-        return funcionesRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/sala/{salaId}")
-    public ResponseEntity<List<Funciones>> getFuncionesBySala(@PathVariable int salaId) {
-        List<Funciones> funciones = funcionesRepository.findAll().stream()
-                .filter(f -> f.getIdSala() != null && f.getIdSala().getId() == salaId)
+    public ResponseEntity<List<FuncionDTO>> getAllFunciones() {
+        List<FuncionDTO> funciones = funcionesRepository.findAll().stream()
+                .map(this::toDTO)
                 .toList();
         return ResponseEntity.ok(funciones);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<FuncionDTO> getFuncionById(@PathVariable Integer id) {
+        return funcionesRepository.findById(id)
+                .map(funcion -> ResponseEntity.ok(toDTO(funcion)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/sala/{salaId}")
+    public ResponseEntity<List<FuncionDTO>> getFuncionesBySala(@PathVariable Integer salaId) {
+        List<FuncionDTO> funciones = funcionesRepository.findAll().stream()
+                .filter(f -> f.getIdSala() != null && f.getIdSala().getId() == salaId)
+                .map(this::toDTO)
+                .toList();
+        return ResponseEntity.ok(funciones);
+    }
+
+    private FuncionDTO toDTO(Funciones funcion) {
+        FuncionDTO dto = new FuncionDTO();
+        dto.setId(funcion.getId());
+        dto.setNombreFuncion(funcion.getNombreFuncion());
+        dto.setHorario(funcion.getHorario());
+        dto.setFecha(funcion.getFecha());
+        dto.setClasificacion(funcion.getClasificacion());
+        if (funcion.getIdSala() != null) {
+            dto.setIdSala(funcion.getIdSala().getId());
+            dto.setNombreSala(funcion.getIdSala().getNombreSala());
+            dto.setPrecio(funcion.getIdSala().getPrecio());
+            if (funcion.getIdSala().getIdEstablecimiento() != null) {
+                dto.setIdEstablecimiento(funcion.getIdSala().getIdEstablecimiento().getId());
+                dto.setNombreEstablecimiento(funcion.getIdSala().getIdEstablecimiento().getNombreSucursal());
+                if (funcion.getIdSala().getIdEstablecimiento().getTipoEstablecimiento() != null) {
+                    dto.setTipoEstablecimiento(funcion.getIdSala().getIdEstablecimiento().getTipoEstablecimiento().getTipo().name());
+                }
+            }
+        }
+        return dto;
+    }
+
     @GetMapping("/{funcionId}/asientos")
-    public ResponseEntity<?> getAsientosForFunction(@PathVariable int funcionId) {
+    public ResponseEntity<?> getAsientosForFunction(@PathVariable Integer funcionId) {
         return funcionesRepository.findById(funcionId)
                 .map(funcion -> {
                     Salas sala = funcion.getIdSala();
@@ -66,7 +93,7 @@ public class FuncionesController {
     }
 
     @GetMapping("/{funcionId}/asientos-disponibles")
-    public ResponseEntity<?> getAsientosDisponibles(@PathVariable int funcionId) {
+    public ResponseEntity<?> getAsientosDisponibles(@PathVariable Integer funcionId) {
         return funcionesRepository.findById(funcionId)
                 .map(funcion -> {
                     Salas sala = funcion.getIdSala();
@@ -94,7 +121,7 @@ public class FuncionesController {
     }
 
     @GetMapping("/{funcionId}/asientos-ocupados")
-    public ResponseEntity<?> getAsientosOcupados(@PathVariable int funcionId) {
+    public ResponseEntity<?> getAsientosOcupados(@PathVariable Integer funcionId) {
         List<String> asientosOcupados = ticketUsuarioRepository.findAll().stream()
                 .filter(t -> t.getFuncion() != null && t.getFuncion().getId() == funcionId)
                 .filter(t -> t.getAsientos() != null)
