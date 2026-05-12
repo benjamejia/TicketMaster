@@ -9,6 +9,7 @@ import { LoginPage } from './pages/LoginPage.tsx'
 import { RegisterPage } from './pages/RegisterPage.tsx'
 import { CheckoutPage } from './pages/CheckoutPage.tsx'
 import { TicketConfirmationPage } from './pages/TicketConfirmationPage.tsx'
+import { MisBoletosPage } from './pages/MisBoletosPage.tsx'
 import { CinePage } from './pages/establecimientos/CinePage.tsx'
 import { TeatroPage } from './pages/establecimientos/TeatroPage.tsx'
 import { MuseumPage } from './pages/establecimientos/MuseumPage.tsx'
@@ -31,6 +32,11 @@ createRoot(document.getElementById('root')!).render(
         <Route
           path="/checkout"
           element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>}
+        />
+        
+        <Route
+          path="/mis-boletos"
+          element={<ProtectedRoute><MisBoletosPage /></ProtectedRoute>}
         />
         
         <Route

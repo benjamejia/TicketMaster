@@ -22,7 +22,6 @@ export function CheckoutPage() {
     cantidadBoletos: 1,
     asientos: [] as string[],
     metodoPago: 'TARJETA_CREDITO' as 'TARJETA_DEBITO' | 'TARJETA_CREDITO' | 'PAYPAL',
-    phoneNumber: '',
     cardInfo: {
       numero: '',
       mes: '',
@@ -97,11 +96,6 @@ export function CheckoutPage() {
   };
 
   const validarFormulario = (): boolean => {
-    if (!formData.phoneNumber || !formData.phoneNumber.startsWith('+')) {
-      setError('Ingresa un número de WhatsApp válido con código de país (ej: +521234567890)');
-      return false;
-    }
-
     if (formData.metodoPago === 'TARJETA_CREDITO' || formData.metodoPago === 'TARJETA_DEBITO') {
       if (!formData.cardInfo.numero || formData.cardInfo.numero.length < 13) {
         setError('Ingresa un número de tarjeta válido');
@@ -136,7 +130,6 @@ export function CheckoutPage() {
         asientos: formData.asientos.length > 0 ? formData.asientos : undefined,
         monto: calcularTotal(),
         metodoPago: formData.metodoPago,
-        phoneNumber: formData.phoneNumber,
       };
 
       const response = await processPurchase(checkoutData);
@@ -148,7 +141,6 @@ export function CheckoutPage() {
           cantidadBoletos: 1,
           asientos: [],
           metodoPago: 'TARJETA_CREDITO',
-          phoneNumber: '',
           cardInfo: { numero: '', mes: '', year: '', cvv: '' },
           paypalEmail: '',
         });
@@ -359,22 +351,11 @@ export function CheckoutPage() {
 
               <div className="bg-surface p-6 rounded-lg border border-outline-variant/20">
                 <h2 className="text-lg font-semibold text-on-background mb-4">
-                  Confirmación por WhatsApp
+                  Confirmación por Email
                 </h2>
-                <p className="text-on-background/70 text-sm mb-4">
-                  Recibirás tu confirmación y código QR en WhatsApp
+                <p className="text-on-background/70 text-sm">
+                  Recibirás tu confirmación y código QR en el email registrado en tu cuenta
                 </p>
-                <label className="block text-on-background text-sm mb-2">
-                  Número de WhatsApp (con código de país)
-                </label>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="+521234567890"
-                  className="w-full border border-outline rounded px-4 py-2"
-                />
               </div>
 
               {error && (
@@ -425,9 +406,9 @@ export function CheckoutPage() {
                   <p className="text-on-background text-sm">
                     Confirmación: {purchaseData.confirmationNumber}
                   </p>
-                  {purchaseData.whatsAppSent && (
+                  {purchaseData.emailSent && (
                     <p className="text-on-background text-sm mt-2">
-                      ✓ Confirmación enviada a WhatsApp
+                      ✓ Confirmación enviada por Email
                     </p>
                   )}
                 </div>

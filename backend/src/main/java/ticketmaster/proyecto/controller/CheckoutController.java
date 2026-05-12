@@ -7,22 +7,19 @@ import org.springframework.web.bind.annotation.*;
 import ticketmaster.proyecto.dto.CheckoutRequestDTO;
 import ticketmaster.proyecto.dto.MyTicketDTO;
 import ticketmaster.proyecto.dto.PurchaseResponseDTO;
-import ticketmaster.proyecto.dto.TicketDetailDTO;
-import ticketmaster.proyecto.dto.TransactionDetailDTO;
 import ticketmaster.proyecto.model.TicketUsuario;
 import ticketmaster.proyecto.model.Transacciones;
 import ticketmaster.proyecto.model.Funciones;
 import ticketmaster.proyecto.model.userModels.User;
 import ticketmaster.proyecto.repository.TicketUsuarioRepository;
 import ticketmaster.proyecto.repository.UserRepository;
-import ticketmaster.proyecto.repository.TransaccionesRepository; // ← AGREGAR este repository
+import ticketmaster.proyecto.repository.TransaccionesRepository;
 import ticketmaster.proyecto.repository.CineRepository.FuncionesRepository;
-import ticketmaster.proyecto.services.WhatsAppService;
+import ticketmaster.proyecto.services.EmailService;
 import ticketmaster.proyecto.services.QRCodeGeneratorService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,13 +39,13 @@ public class CheckoutController {
     private UserRepository userRepository;
 
     @Autowired
-    private TransaccionesRepository transaccionRepository; // ← AGREGADO
+    private TransaccionesRepository transaccionRepository;
 
     @Autowired
-    private FuncionesRepository funcionesRepository; // ← AGREGADO
+    private FuncionesRepository funcionesRepository;
 
     @Autowired
-    private WhatsAppService whatsAppService;
+    private EmailService emailService;
 
     @Autowired
     private QRCodeGeneratorService qrCodeGenerator;
@@ -74,7 +71,6 @@ public class CheckoutController {
                 return ResponseEntity.badRequest().body(createErrorResponse("Cantidad de boletos o monto inválido"));
             }
 
-            // Buscar la función por ID
             TicketUsuario ticket = new TicketUsuario();
             ticket.setUsuario(user);
             ticket.setAsientos(request.getAsientos());
@@ -87,7 +83,6 @@ public class CheckoutController {
 
             TicketUsuario savedTicket = ticketRepository.save(ticket);
 
-            // Crear y GUARDAR transacción
             String numeroConfirmacion = generarNumeroConfirmacion();
             Transacciones transaccion = new Transacciones();
             transaccion.setTicketId(savedTicket.getIdTicket());
@@ -102,13 +97,12 @@ public class CheckoutController {
             String qrCode = qrCodeGenerator.generateQRCode(qrData);
             transaccion.setCodigoQR(qrCode);
 
-            transaccionRepository.save(transaccion); // ← FIX: ya no está comentado
+            transaccionRepository.save(transaccion);
 
-            // Enviar WhatsApp
-            boolean whatsAppSent = false;
-            if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
-                whatsAppSent = whatsAppService.sendPurchaseConfirmation(
-                    request.getPhoneNumber(),
+            boolean emailSent = false;
+            if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+                emailSent = emailService.sendPurchaseConfirmation(
+                    user.getEmail(),
                     savedTicket,
                     transaccion,
                     user.getPrimerNombre()
@@ -121,7 +115,7 @@ public class CheckoutController {
             response.setConfirmationNumber(numeroConfirmacion);
             response.setTicketId(savedTicket.getIdTicket());
             response.setQrCode(qrCode);
-            response.setWhatsAppSent(whatsAppSent);
+            response.setEmailSent(emailSent);
             response.setTransactionId(transaccion.getId());
 
             return ResponseEntity.ok(response);
@@ -132,12 +126,9 @@ public class CheckoutController {
         }
     }
 
-    // Endpoint duplicado eliminado - usar /process en su lugar
-    // FIX en resend: recibe phoneNumber del body, no del @RequestParam
-    @PostMapping("/resend-whatsapp/{ticketId}")
-    public ResponseEntity<?> resendWhatsAppConfirmation(
+    @PostMapping("/resend-email/{ticketId}")
+    public ResponseEntity<?> resendEmailConfirmation(
             @PathVariable int ticketId,
-            @RequestBody Map<String, String> body,
             Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
@@ -161,9 +152,8 @@ public class CheckoutController {
                 return ResponseEntity.status(403).body(createErrorResponse("No tienes permiso para acceder a este ticket"));
             }
 
-            String phoneNumber = body.get("phoneNumber");
-            if (phoneNumber == null || phoneNumber.isEmpty()) {
-                return ResponseEntity.badRequest().body(createErrorResponse("El número de teléfono es requerido"));
+            if (user.getEmail() == null || user.getEmail().isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("El usuario no tiene un email registrado"));
             }
 
             Optional<Transacciones> transaccionOpt = transaccionRepository.findByTicketId(ticketId);
@@ -172,29 +162,83 @@ public class CheckoutController {
             }
 
             Transacciones transaccion = transaccionOpt.get();
-            boolean sent = whatsAppService.sendPurchaseConfirmation(
-                    phoneNumber,
+            boolean sent = emailService.sendPurchaseConfirmation(
+                    user.getEmail(),
                     ticket,
                     transaccion,
                     user.getPrimerNombre()
             );
 
             if (sent) {
-                return ResponseEntity.ok(Map.of("success", true, "message", "WhatsApp reenviado exitosamente"));
+                return ResponseEntity.ok(Map.of("success", true, "message", "Email reenviado exitosamente a " + user.getEmail()));
             } else {
-                return ResponseEntity.status(500).body(createErrorResponse("Error al reenviar el mensaje de WhatsApp"));
+                return ResponseEntity.status(500).body(createErrorResponse("Error al reenviar el email de confirmación"));
             }
 
         } catch (Exception e) {
-            log.error("Error reenviando confirmación de WhatsApp: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(createErrorResponse("Error al reenviar el mensaje de WhatsApp"));
+            log.error("Error reenviando confirmación de email: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(createErrorResponse("Error al reenviar el email de confirmación"));
+        }
+    }
+
+    @GetMapping("/ticket/{ticketId}")
+    public ResponseEntity<?> getTicketDetails(@PathVariable int ticketId, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(createErrorResponse("Usuario no autenticado"));
+            }
+
+            Optional<Transacciones> transaccionOpt = transaccionRepository.findByTicketId(ticketId);
+            if (transaccionOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(createErrorResponse("Transacción no encontrada"));
+            }
+
+            Optional<TicketUsuario> ticketOpt = ticketRepository.findById(ticketId);
+            if (ticketOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(createErrorResponse("Ticket no encontrado"));
+            }
+
+            Transacciones transaccion = transaccionOpt.get();
+            TicketUsuario ticket = ticketOpt.get();
+
+            if (!ticket.getUsuario().getUsername().equals(authentication.getName())) {
+                return ResponseEntity.status(403).body(createErrorResponse("No tienes permiso para acceder a este ticket"));
+            }
+
+            Map<String, Object> ticketInfo = Map.of(
+                "id", ticket.getIdTicket(),
+                "tipoEvento", ticket.getFuncion() != null ? ticket.getFuncion().getNombreFuncion() : "Evento",
+                "ubicacion", ticket.getFuncion() != null && ticket.getFuncion().getIdSala() != null 
+                    ? ticket.getFuncion().getIdSala().getNombreSala() : "Ubicación no disponible",
+                "fecha", ticket.getFecha() != null ? ticket.getFecha().toString() : "",
+                "cantidadBoletos", ticket.getAsientos() != null ? ticket.getAsientos().size() : 0,
+                "asientos", ticket.getAsientos() != null ? ticket.getAsientos() : List.of(),
+                "fechaCompra", ticket.getFecha() != null ? ticket.getFecha().toString() : ""
+            );
+
+            Map<String, Object> response = Map.of(
+                "id", transaccion.getId(),
+                "confirmationNumber", transaccion.getNumeroConfirmacion(),
+                "estado", transaccion.getEstado(),
+                "monto", transaccion.getMonto(),
+                "metodoPago", transaccion.getMetodoPago(),
+                "fecha", transaccion.getFecha().toString(),
+                "qrCode", transaccion.getCodigoQR() != null ? transaccion.getCodigoQR() : "",
+                "ticket", ticketInfo
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error obteniendo detalles del ticket: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(createErrorResponse("Error al obtener los detalles"));
         }
     }
 
     @GetMapping("/my-tickets")
     public ResponseEntity<?> getMyTickets(Authentication authentication) {
         try {
-if (authentication == null || !authentication.isAuthenticated()) {
+            if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(401).body(createErrorResponse("Usuario no autenticado"));
             }
 
@@ -218,6 +262,16 @@ if (authentication == null || !authentication.isAuthenticated()) {
                             dto.setUbicacion(t.getFuncion().getIdSala().getNombreSala());
                             dto.setClasificacion(t.getFuncion().getClasificacion());
                         }
+                        
+                        Optional<Transacciones> transaccionOpt = transaccionRepository.findByTicketId(t.getIdTicket());
+                        transaccionOpt.ifPresent(trans -> {
+                            dto.setNumeroConfirmacion(trans.getNumeroConfirmacion());
+                            dto.setMonto(trans.getMonto());
+                            dto.setMetodoPago(trans.getMetodoPago());
+                            dto.setCodigoQR(trans.getCodigoQR());
+                            dto.setEstado(trans.getEstado());
+                        });
+                        
                         return dto;
                     })
                     .collect(Collectors.toList());
