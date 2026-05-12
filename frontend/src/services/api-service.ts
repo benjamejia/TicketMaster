@@ -170,7 +170,6 @@ export interface CheckoutRequest {
   asientos?: string[];
   monto: number;
   metodoPago: string;
-  phoneNumber: string;
 }
 
 export interface PurchaseResponse {
@@ -180,7 +179,7 @@ export interface PurchaseResponse {
   ticketId: number;
   transactionId: number;
   qrCode: string;
-  whatsAppSent: boolean;
+  emailSent: boolean;
 }
 
 export const processPurchase = async (data: CheckoutRequest): Promise<PurchaseResponse> => {
@@ -230,6 +229,11 @@ export interface MyTicket {
   nombreFuncion: string;
   ubicacion: string;
   clasificacion: string;
+  numeroConfirmacion: string;
+  monto: number;
+  metodoPago: string;
+  codigoQR: string;
+  estado: string;
 }
 
 export const getMyTickets = async (): Promise<MyTicket[]> => {
@@ -241,13 +245,11 @@ export const getMyTickets = async (): Promise<MyTicket[]> => {
   }
 };
 
-export const resendWhatsAppConfirmation = async (
-  ticketId: number,
-  phoneNumber: string
+export const resendEmailConfirmation = async (
+  ticketId: number
 ): Promise<any> => {
   const response = await api.post(
-    `/checkout/resend-whatsapp/${ticketId}`,
-    { phoneNumber }
+    `/checkout/resend-email/${ticketId}`
   );
   return response.data;
 };

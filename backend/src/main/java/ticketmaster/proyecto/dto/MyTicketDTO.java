@@ -18,4 +18,9 @@ public class MyTicketDTO {
     private String nombreFuncion;
     private String ubicacion;
     private String clasificacion;
+    private String numeroConfirmacion;
+    private Double monto;
+    private String metodoPago;
+    private String codigoQR;
+    private String estado;
 }

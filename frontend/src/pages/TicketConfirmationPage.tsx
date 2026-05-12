@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { getTicketDetails, type TransactionDetail } from '../services/api-service';
+import { getTicketDetails, resendEmailConfirmation, type TransactionDetail } from '../services/api-service';
 
 interface PurchaseData {
   confirmationNumber: string;
   ticketId: number;
   transactionId: number;
   qrCode: string;
-  whatsAppSent: boolean;
+  emailSent: boolean;
 }
 
 export function TicketConfirmationPage() {
@@ -19,7 +19,6 @@ export function TicketConfirmationPage() {
   const [ticketDetails, setTicketDetails] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [resending, setResending] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -48,28 +47,19 @@ export function TicketConfirmationPage() {
     loadData();
   }, [ticketId, location.state]);
 
-  const handleResendWhatsApp = async (e: React.FormEvent) => {
+  const handleResendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!phoneNumber || !phoneNumber.startsWith('+')) {
-      setMessage({
-        type: 'error',
-        text: 'Ingresa un número de WhatsApp válido con código de país',
-      });
-      return;
-    }
-
     setResending(true);
+    setMessage(null);
 
     try {
       if (ticketId) {
-        const { resendWhatsAppConfirmation } = await import('../services/api-service');
-        await resendWhatsAppConfirmation(parseInt(ticketId), phoneNumber);
+        await resendEmailConfirmation(parseInt(ticketId));
         setMessage({
           type: 'success',
-          text: 'Confirmación reenviada a WhatsApp',
+          text: 'Confirmación reenviada por email exitosamente',
         });
-        setPhoneNumber('');
       }
     } catch {
       setMessage({
@@ -198,7 +188,7 @@ export function TicketConfirmationPage() {
           </div>
         )}
 
-        {ticketDetails?.qrCode && (
+        {(ticketDetails?.qrCode || purchaseData?.qrCode) && (
           <div className="bg-surface p-6 rounded-lg border border-outline-variant/20 mb-8 text-center">
             <h2 className="text-lg font-bold text-on-background mb-4">
               Código QR
@@ -207,7 +197,7 @@ export function TicketConfirmationPage() {
               Presenta este código en la entrada del evento
             </p>
             <img
-              src={`data:image/png;base64,${ticketDetails.qrCode}`}
+              src={`data:image/png;base64,${ticketDetails?.qrCode || purchaseData?.qrCode}`}
               alt="QR Code"
               className="w-48 h-48 mx-auto mb-4"
             />
@@ -223,38 +213,30 @@ export function TicketConfirmationPage() {
         {purchaseData && (
           <div className="bg-surface p-6 rounded-lg border border-outline-variant/20 mb-8">
             <h2 className="text-lg font-bold text-on-background mb-4">
-              WhatsApp
+              Confirmación por Email
             </h2>
-            {purchaseData.whatsAppSent ? (
+            {purchaseData.emailSent ? (
               <div className="flex items-center gap-3 text-success mb-4">
                 <span className="text-2xl">✓</span>
-                <p>Confirmación enviada a tu WhatsApp</p>
+                <p>Confirmación enviada a tu email registrado</p>
               </div>
             ) : (
               <p className="text-on-background/70 mb-4">
-                ¿No recibiste el mensaje? Proporciona tu número para reenviar
+                ¿No recibiste el email? Haz clic en el botón para reenviar
               </p>
             )}
 
-            <form onSubmit={handleResendWhatsApp} className="flex gap-2">
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+521234567890"
-                className="flex-1 border border-outline rounded-lg px-4 py-2"
-                disabled={resending}
-              />
+            <form onSubmit={handleResendEmail}>
               <button
                 type="submit"
-                disabled={resending || !phoneNumber}
-                className={`px-6 py-2 rounded-lg font-semibold transition ${
-                  resending || !phoneNumber
+                disabled={resending}
+                className={`w-full px-6 py-3 rounded-lg font-semibold transition ${
+                  resending
                     ? 'bg-primary/50 text-white cursor-not-allowed'
                     : 'bg-primary text-white hover:bg-primary/90'
                 }`}
               >
-                {resending ? 'Enviando...' : 'Reenviar'}
+                {resending ? 'Reenviando...' : 'Reenviar Confirmación por Email'}
               </button>
             </form>
           </div>
@@ -281,7 +263,7 @@ export function TicketConfirmationPage() {
             <li>✓ Presenta este código QR en la entrada</li>
             <li>✓ Llega 15 minutos antes del evento</li>
             <li>✓ Trae un documento de identificación</li>
-            <li>✓ Revisa la confirmación en tu WhatsApp</li>
+            <li>✓ Revisa la confirmación en tu email</li>
           </ul>
         </div>
 
